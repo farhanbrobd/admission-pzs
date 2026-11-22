@@ -174,7 +174,7 @@ main>section:not(.hidden){animation:up .45s ease}
   <!-- হোম -->
   <section id="t-home" class="space-y-8">
     <div class="hero dots rounded-3xl p-8 md:p-12 text-white shadow-xl relative overflow-hidden">
-      <span class="inline-block bg-yellow-400 text-emerald-950 text-xs font-bold px-3 py-1 rounded-full mb-4" id="hero-badge">ভর্তি চলছে • শিক্ষাবর্ষ ২০২৬</span>
+      <span class="inline-block bg-yellow-400 text-emerald-950 text-xs font-bold px-3 py-1 rounded-full mb-4" id="hero-badge">ভর্তি চলছে • শিক্ষাবর্ষ ২০২৭</span>
       <h2 class="ser text-3xl md:text-5xl font-extrabold leading-tight mb-4">জ্ঞানের আলোয় আলোকিত<br>আগামীর পথচলা</h2>
       <p class="text-emerald-100 max-w-2xl mb-6">তৃতীয়, ষষ্ঠ ও নবম শ্রেণিতে মেধা যাচাই পরীক্ষার মাধ্যমে শিক্ষার্থী ভর্তি করা হবে। ঘরে বসেই অনলাইনে আবেদন, ফি পরিশোধ ও প্রবেশপত্র সংগ্রহ করুন।</p>
       <div class="flex flex-wrap gap-3">
@@ -295,7 +295,7 @@ main>section:not(.hidden){animation:up .45s ease}
           <img id="ac-photo" src="" alt="" class="hidden absolute right-0 top-0 w-20 h-24 object-cover border-2 border-emerald-800">
           <h2 class="ser text-2xl font-extrabold text-emerald-900">পানিপুর জেলা স্কুল</h2>
           <p class="text-xs text-gray-600">হাটকালুপাড়া মহাসড়ক, পানিপুর</p>
-          <span class="inline-block bg-emerald-900 text-white text-sm font-bold px-5 py-1 rounded-full mt-2">প্রবেশপত্র (Admit Card) - ২০২৬</span>
+          <span class="inline-block bg-emerald-900 text-white text-sm font-bold px-5 py-1 rounded-full mt-2">প্রবেশপত্র (Admit Card) - শিক্ষাবর্ষ ২০২৭</span>
         </div>
         <div class="grid grid-cols-2 gap-x-6 gap-y-3 text-sm">
           <p><strong>রোল:</strong> <span id="ac-roll" class="font-bold text-emerald-800 text-lg"></span></p>
@@ -309,8 +309,13 @@ main>section:not(.hidden){animation:up .45s ease}
         <div class="mt-6 bg-emerald-50 p-4 rounded-xl border border-emerald-200">
           <h4 class="font-bold text-emerald-900 text-sm mb-2 border-b pb-1">পরীক্ষার সময়সূচি</h4>
           <p id="ac-exam" class="text-sm"></p>
+          <p id="ac-marks" class="text-sm font-semibold text-emerald-900 mt-1"></p>
         </div>
-        <p class="text-[11px] text-gray-500 mt-4">* পরীক্ষার দিন এই প্রবেশপত্র (প্রিন্ট কপি) অবশ্যই সঙ্গে আনতে হবে।</p>
+        <div class="text-[11px] text-gray-600 mt-4 space-y-0.5">
+          <p>* পরীক্ষার দিন এই প্রবেশপত্র (প্রিন্ট কপি) অবশ্যই সঙ্গে আনতে হবে।</p>
+          <p>* প্রশ্ন এনসিটিবি-র পাঠ্যবই থেকে করা হবে।</p>
+          <p>* লিখিত পরীক্ষায় অবশ্যই <b>কালো কালির কলম</b> ব্যবহার করতে হবে।</p>
+        </div>
         <div class="mt-10 flex justify-between items-end text-xs pt-4 border-t border-dashed">
           <p class="border-t border-gray-500 px-4 pt-1">শিক্ষার্থীর স্বাক্ষর</p>
           <div class="text-center"><div id="ac-qr" class="w-20 h-20 mx-auto"></div><p class="text-[9px] text-gray-500 mt-0.5">যাচাই কোড</p></div>
@@ -475,6 +480,25 @@ const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt
 const en = s => String(s).replace(/[০-৯]/g, d => '০১২৩৪৫৬৭৮৯'.indexOf(d));
 const CLASSES = [{code:'3', label:'৩য়'}, {code:'6', label:'৬ষ্ঠ'}, {code:'9', label:'৯ম'}];
 const GROUPS = ['বিজ্ঞান', 'মানবিক', 'ব্যবসায় শিক্ষা'];
+/* সরকারি ভর্তি নীতিমালা-২০২৭ (৬.২.খ): লিখিত পরীক্ষার মানবণ্টন ও সময় */
+const EXAM_INFO = {
+  '৩য়': { mark: '৫০', split: 'বাংলা ১৫, ইংরেজি ১৫, গণিত ২০', dur: '১ ঘণ্টা' },
+  '৬ষ্ঠ': { mark: '১০০', split: 'বাংলা ৩০, ইংরেজি ৩০, গণিত ৪০', dur: '২ ঘণ্টা' },
+  '৯ম': { mark: '১০০', split: 'বাংলা ৩০, ইংরেজি ৩০, গণিত ৪০', dur: '২ ঘণ্টা' }
+};
+const examLine = c => { const e = EXAM_INFO[c]; return e ? `পূর্ণমান ${e.mark} (${e.split}) • সময় ${e.dur}` : ''; };
+/* কোটা (নীতিমালা ১৭): প্রাথমিক বিদ্যালয় কোটা শুধু ৬ষ্ঠ শ্রেণিতে */
+const QUOTA_PRIMARY = 'সরকারি প্রাথমিক বিদ্যালয় কোটা';
+const QUOTA_BASE = ['সাধারণ', 'মুক্তিযোদ্ধা কোটা', 'প্রতিবন্ধী কোটা', 'ভাই-বোন কোটা', 'যমজ ভাই-বোন কোটা', 'শিক্ষা মন্ত্রণালয়ের কর্মকর্তা-কর্মচারীর সন্তান কোটা', 'সরকারি কর্মকর্তা-কর্মচারীর বদলিজনিত কোটা', 'বিদ্যালয়ের শিক্ষক-কর্মচারীর সন্তান কোটা'];
+function refreshQuota(p, keep) {
+  const el = $(p + 'quota'); if (!el) return;
+  const cls = p === 'f-' ? document.querySelector('[name=cls]:checked')?.value : ($('e-targetClass') || {}).value;
+  const cur = keep !== undefined ? keep : el.value;
+  let opts = QUOTA_BASE.concat(cls === '৬ষ্ঠ' ? [QUOTA_PRIMARY] : []);
+  if (p === 'e-' && cur && cur !== 'N/A' && !opts.includes(cur)) opts = opts.concat([cur]); /* পুরনো আবেদনের মান হারাবে না */
+  el.innerHTML = opts.map(o => `<option value="${esc(o)}" ${o === cur ? 'selected' : ''}>${esc(o)}</option>`).join('');
+  if (!opts.includes(cur)) el.value = opts[0];
+}
 const TABS = ['home', 'apply', 'pay', 'admit', 'admin'];
 const ATABS = ['overview', 'list', 'cm', 'seat', 'set'];
 const ST = {Pending:['অপেক্ষমাণ','bg-gray-100 text-gray-700'], Submitted:['যাচাই বাকি','bg-amber-100 text-amber-800'], Paid:['পরিশোধিত','bg-green-100 text-green-800']};
@@ -506,8 +530,8 @@ function renderMsgs() {
 /* ---------- আবেদনের সময়সূচি (ডিফল্ট; এডমিন প্যানেল থেকে বদলানো যায়) ---------- */
 let dates = {
   applyStart: new Date('2026-10-19T00:00:00+06:00'),
-  applyEnd: new Date('2026-11-20T23:59:59+06:00'),
-  payEnd: new Date('2026-11-20T23:59:59+06:00'),
+  applyEnd: new Date('2026-11-30T23:59:59+06:00'),
+  payEnd: new Date('2026-11-30T23:59:59+06:00'),
   admitStart: new Date('2026-12-05T00:00:00+06:00'),
   examDate: new Date('2026-12-26T00:00:00+06:00')
 };
@@ -594,7 +618,7 @@ const FIELDS = {
     ['presentAddress','বর্তমান ঠিকানা *','textarea'],
     ['prevSchool','পূর্ববর্তী প্রতিষ্ঠানের নাম *','text'],
     ['prevResult','পূর্ববর্তী শ্রেণির ফলাফল *','text','placeholder="GPA বা স্থান"'],
-    ['quota','বিশেষ কোটা','select',['সাধারণ','মুক্তিযোদ্ধা কোটা','প্রতিবন্ধী কোটা','ভাই-বোন কোটা','সরকারি প্রাথমিক বিদ্যালয় কোটা']]]]
+    ['quota','বিশেষ কোটা (প্রযোজ্য হলে; প্রমাণপত্র ভর্তির সময় দেখাতে হবে)','select',QUOTA_BASE]]]
 };
 
 function fld([id, label, type, extra], p, val) {
@@ -670,7 +694,7 @@ function buildForm() {
   $('grp-opts').innerHTML = GROUPS.map(g => `<label class="flex items-center gap-2 cursor-pointer bg-white p-2.5 rounded-xl border"><input type="radio" name="grp" value="${g}"> ${g}</label>`).join('');
   $('stp-apply').innerHTML = stepper(1); $('stp-pay').innerHTML = stepper(2); $('stp-admit').innerHTML = stepper(3);
 }
-function toggleGroup() { $('grp-box').classList.toggle('hidden', document.querySelector('[name=cls]:checked')?.value !== '৯ম'); }
+function toggleGroup() { $('grp-box').classList.toggle('hidden', document.querySelector('[name=cls]:checked')?.value !== '৯ম'); refreshQuota('f-'); }
 
 function go(n) {
   TABS.forEach(t => {
@@ -699,7 +723,7 @@ function renderPublic() {
   renderTimeline(); applyGate();
   $('cfg-view').innerHTML = CLASSES.map(c => `<div class="card top text-center">
     <p class="ser text-4xl font-extrabold text-emerald-800">${c.label}</p><p class="text-sm font-bold text-emerald-900 mb-2">শ্রেণি</p>
-    <p class="text-xs text-gray-600 leading-relaxed">${esc(examConfigs[c.label])}</p></div>`).join('');
+    <p class="text-xs text-gray-600 leading-relaxed">${esc(examConfigs[c.label])}</p><p class="text-[11px] font-bold text-emerald-800 mt-2">✍️ ${esc(examLine(c.label))}</p></div>`).join('');
   $('cm-view').innerHTML = committeeList.length ? committeeList.map(c => `<div class="card text-center !p-4">
     <div class="w-12 h-12 mx-auto mb-2 rounded-full bg-emerald-800 text-yellow-300 ser font-bold text-xl flex items-center justify-center">${esc([...c.name][0] || '')}</div>
     <p class="font-bold text-emerald-900">${esc(c.name)}</p><p class="text-xs text-gray-600">${esc(c.designation)}</p>
@@ -897,6 +921,7 @@ window.findAdmit = async () => {
         $('ac-roll').textContent = r.roll; $('ac-class').textContent = r.targetClass + (r.group !== 'N/A' ? ' (' + r.group + ')' : '');
         $('ac-name').textContent = r.name; $('ac-father').textContent = r.fatherName; $('ac-mobile').textContent = r.fatherPhone;
         $('ac-exam').textContent = examConfigs[r.targetClass] || 'শীঘ্রই জানানো হবে';
+        $('ac-marks').textContent = examLine(r.targetClass) ? '✍️ ' + examLine(r.targetClass) : '';
         $('ac-seat-row').classList.toggle('hidden', !r.room); if (r.room) $('ac-seat').textContent = `${r.room}, বেঞ্চ ${r.bench} (${r.seat} আসন)`;
         if (r.photo) { $('ac-photo').src = r.photo; $('ac-photo').classList.remove('hidden'); }
         $('ac-wrap').classList.remove('hidden');
@@ -1105,7 +1130,7 @@ window.saveMsg = async k => {
 function noticeHtml() {
   const base = location.origin + location.pathname.replace(/index\.html$/, ''), shown = location.host + location.pathname.replace(/index\.html$/, '').replace(/\/$/, '');
   const split = t => { const p = String(t || '').split('|').map(x => x.trim()); return [(p[0] || '').replace(/^আসন:\s*/, ''), p.slice(1).join(' | ').replace(/^পরীক্ষা:\s*/, '')]; };
-  const rows = CLASSES.map(c => { const [a, b] = split(examConfigs[c.label]); return `<tr><td><b>${c.label}</b></td><td>${esc(a)}</td><td>${esc(b || bdy(dates.examDate))}</td></tr>`; }).join('');
+  const rows = CLASSES.map(c => { const [a, b] = split(examConfigs[c.label]); return `<tr><td><b>${c.label}</b></td><td>${esc(a)}</td><td>${esc(b || bdy(dates.examDate))}</td><td>${esc(examLine(c.label))}</td></tr>`; }).join('');
   const a2 = new Date(dates.admitStart.getTime() + 864e5);
   const admitTxt = `${bdf(dates.admitStart, { day: 'numeric' })} ও ${bdf(a2, { day: 'numeric' })} ${bdf(dates.admitStart, { month: 'long', year: 'numeric' })}`;
   const sec = committeeList.find(c => /সদস্য সচিব/.test(c.designation || '')) || { name: messages.head.name, designation: messages.head.desig };
@@ -1114,12 +1139,12 @@ function noticeHtml() {
   const logo = siteLogo ? `<img class="lg" src="${siteLogo}" alt="">` : '<div class="lg"></div>';
   return `<div class="nt${dense}"><div class="band"></div><div class="ni">
   <div class="hd">${logo}<div class="tt"><div class="sch">পানিপুর জেলা স্কুল</div><div class="tg">একটি ঐতিহ্যবাহী মনতেশ্বরী শিক্ষা প্রতিষ্ঠান</div><div style="font-size:8.5pt;color:#4b5563">হাটকালুপাড়া মহাসড়ক, পানিপুর</div></div>
-    <div><h1>ভর্তি বিজ্ঞপ্তি</h1><span class="rib">শিক্ষাবর্ষ ২০২৬ • ৩য়, ৬ষ্ঠ ও ৯ম শ্রেণি</span></div></div>
+    <div><h1>ভর্তি বিজ্ঞপ্তি</h1><span class="rib">শিক্ষাবর্ষ ২০২৭ • ৩য়, ৬ষ্ঠ ও ৯ম শ্রেণি</span></div></div>
   <div class="dv"></div>
   <div class="meta"><span>স্মারক নং: পাজেস্কু/ভর্তি/২০২৬/........</span><span>তারিখ: ${bdy(dates.applyStart)}</span></div>
-  <p class="in2">পানিপুর জেলা স্কুলে ২০২৬ শিক্ষাবর্ষে ৩য়, ৬ষ্ঠ ও ৯ম শ্রেণিতে মেধা যাচাই পরীক্ষার মাধ্যমে শিক্ষার্থী ভর্তি করা হবে। আগ্রহী অভিভাবকদের নির্ধারিত সময়ের মধ্যে <b>শুধুমাত্র অনলাইনে</b> আবেদন করার জন্য অনুরোধ করা হলো।</p>
+  <p class="in2">পানিপুর জেলা স্কুলে ২০২৭ শিক্ষাবর্ষে ৩য়, ৬ষ্ঠ ও ৯ম শ্রেণিতে মেধা যাচাই পরীক্ষার মাধ্যমে শিক্ষার্থী ভর্তি করা হবে। আগ্রহী অভিভাবকদের নির্ধারিত সময়ের মধ্যে <b>শুধুমাত্র অনলাইনে</b> আবেদন করার জন্য অনুরোধ করা হলো।</p>
   <h3>শ্রেণিভিত্তিক আসন সংখ্যা ও পরীক্ষার সময়</h3>
-  <table><thead><tr><th style="width:14%">শ্রেণি</th><th>আসন ও বিবরণ</th><th style="width:38%">পরীক্ষার তারিখ ও সময়</th></tr></thead><tbody>${rows}</tbody></table>
+  <table><thead><tr><th style="width:9%">শ্রেণি</th><th style="width:25%">আসন ও বিবরণ</th><th style="width:28%">পরীক্ষার তারিখ ও সময়</th><th>পূর্ণমান ও পরীক্ষার সময়</th></tr></thead><tbody>${rows}</tbody></table>
   <div class="cols"><div><h3>গুরুত্বপূর্ণ তারিখ</h3><div class="dl">
     <div><span>আবেদন শুরু</span><span>${bdy(dates.applyStart)}</span></div>
     <div class="hl"><span>আবেদন ও ফি জমার শেষ দিন</span><span>${bdy(dates.payEnd)}</span></div>
@@ -1137,6 +1162,7 @@ function noticeHtml() {
     <li>পিতা ও মাতার এনআইডি ও পেশা; পিতা মৃত হলে মাতার তথ্যসহ অভিভাবকের তথ্য</li>
     <li>যোগাযোগের মোবাইল নম্বর</li><li>পূর্ববর্তী প্রতিষ্ঠান ও ফলাফলের তথ্য</li></ul></div>
    <div><h3>বিশেষ নির্দেশনা</h3><ul>
+    <li>প্রশ্ন এনসিটিবি-র পাঠ্যবই থেকে হবে; লিখিত পরীক্ষায় <b>কালো কালির কলম</b> ব্যবহার করতে হবে।</li>
     <li>রোল ও মোবাইল নম্বর সংরক্ষণ করুন; পেমেন্ট ও প্রবেশপত্রে দুটোই লাগবে।</li>
     <li>একজন শিক্ষার্থীর জন্য একটিই আবেদন করুন। ভুল তথ্যে আবেদন বাতিল হতে পারে।</li>
     <li>নির্ধারিত সময়ের পর আবেদন ও ফি গ্রহণ করা হবে না।</li>
@@ -1299,7 +1325,7 @@ window.printSlips = () => {
   let h = '';
   for (let i = 0; i < rs.length; i += 12) {
     h += '<div class="pg"><div class="slips">' + rs.slice(i, i + 12).map(o => `<div class="slip">
-      <div style="display:flex;justify-content:space-between"><b>পানিপুর জেলা স্কুল</b><span>ভর্তি পরীক্ষা ২০২৬</span></div>
+      <div style="display:flex;justify-content:space-between"><b>পানিপুর জেলা স্কুল</b><span>ভর্তি পরীক্ষা (শিক্ষাবর্ষ ২০২৭)</span></div>
       <div class="rl">রোল: ${esc(o.s.roll)}</div><div>নাম: <b>${esc(o.s.name)}</b></div><div>পিতা: ${esc(o.s.fatherName)}</div>
       <div>শ্রেণি: <b>${clsTxt(o.s)}</b> | ${esc(o.room)} • বেঞ্চ ${o.bench} (${o.seat})</div></div>`).join('') + '</div></div>';
   }
@@ -1322,7 +1348,7 @@ window.printAttendance = () => {
   const rooms = [...new Set(rs.map(o => o.room))];
   printHtml(rooms.map(room => {
     const list = rs.filter(o => o.room === room);
-    return `<div class="pg"><h2 style="font-size:16pt;font-weight:800;text-align:center">পানিপুর জেলা স্কুল — ভর্তি পরীক্ষা ২০২৬ — হাজিরা শিট</h2>
+    return `<div class="pg"><h2 style="font-size:16pt;font-weight:800;text-align:center">পানিপুর জেলা স্কুল — ভর্তি পরীক্ষা (শিক্ষাবর্ষ ২০২৭) — হাজিরা শিট</h2>
       <p style="text-align:center;margin-bottom:3mm">${esc(room)} • তারিখ: ${bdy(dates.examDate)} • মোট পরীক্ষার্থী: ${list.length}</p>
       <table class="pt"><thead><tr><th>ক্র.</th><th>রোল</th><th>নাম</th><th>পিতার নাম</th><th>শ্রেণি</th><th>বেঞ্চ/আসন</th><th style="width:30mm">স্বাক্ষর</th></tr></thead><tbody>
       ${list.map((o, i) => `<tr><td>${i + 1}</td><td><b>${esc(o.s.roll)}</b></td><td>${esc(o.s.name)}</td><td>${esc(o.s.fatherName)}</td><td>${clsTxt(o.s)}</td><td>${o.bench} (${o.seat})</td><td></td></tr>`).join('')}</tbody></table>
@@ -1355,7 +1381,7 @@ function formHtml(s) {
   <div class="hd">${siteLogo ? `<img class="lg" src="${siteLogo}" alt="">` : '<div class="lg"></div>'}
     <div class="tx"><h1>পানিপুর জেলা স্কুল</h1><div style="font-size:9pt;color:#92400e">একটি ঐতিহ্যবাহী মনতেশ্বরী শিক্ষা প্রতিষ্ঠান</div><div style="font-size:8.5pt;color:#4b5563">হাটকালুপাড়া মহাসড়ক, পানিপুর</div></div>
     ${s.photo ? `<img class="ph" src="${s.photo}" alt="">` : '<div class="ph">ছবি</div>'}</div>
-  <div class="rib"><span>ভর্তি আবেদন ফরম — শিক্ষাবর্ষ ২০২৬</span></div>
+  <div class="rib"><span>ভর্তি আবেদন ফরম — শিক্ষাবর্ষ ২০২৭</span></div>
   <div class="strip"><div><small>রোল নম্বর</small><b>${esc(s.roll)}</b></div><div><small>আবেদিত শ্রেণি</small><b>${esc(cls)}</b></div>
     <div><small>আবেদনের তারিখ</small><b style="font-size:10.5pt">${bdy(when)}</b></div><div><small>অবস্থা</small><b style="font-size:10.5pt;color:#047857">আবেদন গৃহীত ✔</b></div></div>
   <h3>১. শিক্ষার্থীর তথ্য</h3><table>${two('শিক্ষার্থীর নাম', s.name, 'Name (English)', s.nameEn)}${two('জন্ম নিবন্ধন', s.birthRegNo, 'জন্ম তারিখ', s.dob)}${two('লিঙ্গ', s.gender, 'ধর্ম', s.religion)}${one('সহশিক্ষা কার্যক্রমে দক্ষতা', s.coCurricular)}</table>
@@ -1364,7 +1390,7 @@ function formHtml(s) {
   <div class="nx"><b>পরবর্তী করণীয়</b><ol>
     <li>ভর্তি ফি <b>২৫০ টাকা</b> বিকাশ/নগদে পাঠিয়ে ওয়েবসাইটের “পেমেন্ট” পেজে রোল, অভিভাবকের মোবাইল ও TrxID জমা দিন — <b>শেষ দিন ${bdy(dates.payEnd)}</b>।</li>
     <li>ফি যাচাই হলে <b>${bd(dates.admitStart)}</b> থেকে “এডমিট কার্ড” পেজ থেকে প্রবেশপত্র ডাউনলোড করুন।</li>
-    <li>ভর্তি পরীক্ষা: <b>${esc(ex)}</b>। প্রবেশপত্রের প্রিন্ট কপি সঙ্গে আনুন।</li></ol></div>
+    <li>ভর্তি পরীক্ষা: <b>${esc(ex)}</b>। প্রবেশপত্রের প্রিন্ট কপি ও কালো কালির কলম সঙ্গে আনুন।</li></ol></div>
   <p class="dc">আমি এই মর্মে ঘোষণা করছি যে, উপরে প্রদত্ত সকল তথ্য সত্য ও নির্ভুল। কোনো তথ্য অসত্য প্রমাণিত হলে আবেদন বাতিলযোগ্য হবে।</p>
   <div class="sg"><div class="sl">অভিভাবকের স্বাক্ষর</div>${qr ? `<span class="qr">${qr}যাচাই কোড • ${esc(s.roll)}</span>` : '<span></span>'}<div class="sl2">${siteSig ? `<img src="${siteSig}" alt="" style="height:12mm;display:block;margin:0 auto 1mm">` : ''}<div class="sl">প্রধান শিক্ষক (গ্রহণকারী)</div></div></div>
   <div class="ft">ফরম তৈরির সময়: ${bdf(new Date(), { day: 'numeric', month: 'long', year: 'numeric', hour: 'numeric', minute: '2-digit' })} • ${esc(location.host + location.pathname)}</div></div>`;
@@ -1397,12 +1423,12 @@ window.editStudent = id => {
   showModal(`<form onsubmit="saveStudent(event,'${id}')" class="text-sm">
     <h3 class="ser text-lg font-bold text-emerald-900">✏️ আবেদন সম্পাদনা — রোল ${esc(s.roll)}</h3>
     <p class="text-xs text-gray-500 mb-3">পেমেন্ট অবস্থা এখান থেকে বদলায় না। মোবাইল বা শ্রেণি বদলালে (শ্রেণি বদলালে নতুন রোল হয়) নতুন Firestore Rules লাগবে।</p>
-    <div class="space-y-3"><div><label class="lb">শ্রেণি *</label><select id="e-targetClass" class="in" onchange="$('e-grp-wrap').classList.toggle('hidden',this.value!=='৯ম')">${CLASSES.map(c => `<option ${c.label === s.targetClass ? 'selected' : ''}>${c.label}</option>`).join('')}</select></div>
+    <div class="space-y-3"><div><label class="lb">শ্রেণি *</label><select id="e-targetClass" class="in" onchange="$('e-grp-wrap').classList.toggle('hidden',this.value!=='৯ম');refreshQuota('e-')">${CLASSES.map(c => `<option ${c.label === s.targetClass ? 'selected' : ''}>${c.label}</option>`).join('')}</select></div>
     <div id="e-grp-wrap" class="${s.targetClass === '৯ম' ? '' : 'hidden'}"><label class="lb">বিভাগ *</label><select id="e-group" class="in">${GROUPS.map(g => `<option ${g === s.group ? 'selected' : ''}>${g}</option>`).join('')}</select></div></div>
     ${sections}
     <div class="mt-4"><label class="lb">ছবি বদলান (ঐচ্ছিক)</label><div class="flex items-center gap-3">${s.photo ? `<img src="${s.photo}" class="w-14 h-16 object-cover border rounded" alt="">` : ''}<input type="file" id="e-photo" accept="image/*" class="in text-xs"></div></div>
     <div class="flex gap-3 justify-center mt-5"><button id="e-save" class="btn">💾 সংরক্ষণ করুন</button><button type="button" onclick="closeModal()" class="bg-gray-500 text-white font-bold px-5 py-2 rounded-xl">বাতিল</button></div></form>`, false);
-  applyParents('e-', false);
+  applyParents('e-', false); refreshQuota('e-', s.quota);
 };
 window.saveStudent = async (e, id) => {
   e.preventDefault();
