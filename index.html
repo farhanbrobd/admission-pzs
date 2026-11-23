@@ -520,27 +520,42 @@ function refreshQuota(p, keep) {
   toggleFfBox(p);
 }
 
-function toggleFfBox(p, existingProofs) {
+function toggleFfBox(p, existingProofs, existingMis) {
   const qEl = $(p + 'quota'); if (!qEl) return;
   let box = $(p + 'ff-box');
   if (!box) {
     box = document.createElement('div');
     box.id = p + 'ff-box';
-    box.className = 'hidden md:col-span-2 bg-emerald-50/80 border border-emerald-300 rounded-xl p-3 space-y-2';
+    box.className = 'hidden md:col-span-2 bg-emerald-50/80 border border-emerald-300 rounded-xl p-3 space-y-3';
     qEl.parentElement.after(box);
   }
   const isFF = qEl.value === 'মুক্তিযোদ্ধা কোটা';
   box.classList.toggle('hidden', !isFF);
   if (!isFF) { box.innerHTML = ''; return; }
-  if (!box.innerHTML.trim() || existingProofs) {
-    box.innerHTML = `<div class="flex justify-between items-center">
-        <p class="text-xs font-bold text-emerald-900">🎖️ মুক্তিযোদ্ধা/শহীদ মুক্তিযোদ্ধার প্রমাণকের তথ্য (ন্যূনতম ১টি আবশ্যক) *</p>
-        <button type="button" onclick="addFfRow('${p}')" class="bg-emerald-700 text-white text-xs px-2.5 py-1 rounded-lg font-bold">+ আরও প্রমাণক যোগ করুন</button>
-      </div>
-      <div id="${p}ff-rows" class="space-y-2"></div>`;
-    const list = (Array.isArray(existingProofs) && existingProofs.length) ? existingProofs : [{ type: '', serial: '' }];
-    list.forEach(item => addFfRow(p, item.type, item.serial));
-  }
+
+  const prevMis = existingMis !== undefined
+    ? (existingMis && existingMis !== 'N/A' ? existingMis : '')
+    : ($(p + 'ff-mis')?.value || '');
+  const prevRows = existingProofs !== undefined
+    ? existingProofs
+    : Array.from(document.querySelectorAll(`#${p}ff-rows > div`)).map(r => ({
+        type: r.querySelector('.ff-type')?.value || '',
+        serial: r.querySelector('.ff-serial')?.value || ''
+      }));
+
+  box.innerHTML = `
+    <div>
+      <label class="lb text-emerald-950">মুক্তিযোদ্ধার MIS নম্বর *</label>
+      <input type="text" id="${p}ff-mis" class="in text-xs bg-white" placeholder="মুক্তিযোদ্ধার MIS নম্বর লিখুন *" value="${esc(prevMis)}" required>
+    </div>
+    <div class="flex justify-between items-center pt-1">
+      <p class="text-xs font-bold text-emerald-900">🎖️ মুক্তিযোদ্ধা/শহীদ মুক্তিযোদ্ধার প্রমাণকের তথ্য (ন্যূনতম ১টি আবশ্যক) *</p>
+      <button type="button" onclick="addFfRow('${p}')" class="bg-emerald-700 text-white text-xs px-2.5 py-1 rounded-lg font-bold">+ আরও প্রমাণক যোগ করুন</button>
+    </div>
+    <div id="${p}ff-rows" class="space-y-2"></div>`;
+
+  const list = (Array.isArray(prevRows) && prevRows.length) ? prevRows : [{ type: '', serial: '' }];
+  list.forEach(item => addFfRow(p, item.type, item.serial));
 }
 
 window.addFfRow = (p, selType = '', serialVal = '') => {
@@ -559,15 +574,16 @@ window.addFfRow = (p, selType = '', serialVal = '') => {
 
 function readFfProofs(p) {
   const qEl = $(p + 'quota');
-  if (!qEl || qEl.value !== 'মুক্তিযোদ্ধা কোটা') return [];
+  if (!qEl || qEl.value !== 'মুক্তিযোদ্ধা কোটা') return { misNo: '', proofs: [] };
+  const misNo = ($(p + 'ff-mis')?.value || '').trim();
   const rows = document.querySelectorAll(`#${p}ff-rows > div`);
-  const list = [];
+  const proofs = [];
   rows.forEach(r => {
     const type = r.querySelector('.ff-type')?.value.trim();
     const serial = r.querySelector('.ff-serial')?.value.trim();
-    if (type || serial) list.push({ type, serial });
+    if (type || serial) proofs.push({ type, serial });
   });
-  return list;
+  return { misNo, proofs };
 }
 const TABS = ['home', 'apply', 'pay', 'admit', 'admin'];
 const ATABS = ['overview', 'list', 'cm', 'seat', 'set'];
