@@ -490,9 +490,16 @@ const EXAM_INFO = {
 const examLine = c => { const e = EXAM_INFO[c]; return e ? `পূর্ণমান ${e.mark} (${e.split}) • সময় ${e.dur}` : ''; };
 /* কোটা (নীতিমালা ১৭): প্রাথমিক বিদ্যালয় কোটা শুধু ৬ষ্ঠ শ্রেণিতে */
 const QUOTA_PRIMARY = 'সরকারি প্রাথমিক বিদ্যালয় কোটা';
-const QUOTA_BASE = ['সাধারণ', 'মুক্তিযোদ্ধা কোটা', 'প্রতিবন্ধী কোটা', 'ভাই-বোন কোটা', 'যমজ ভাই-বোন কোটা', 'শিক্ষা মন্ত্রণালয়ের কর্মকর্তা-কর্মচারীর সন্তান কোটা', 'সরকারি কর্মকর্তা-কর্মচারীর বদলিজনিত কোটা', 'বিদ্যালয়ের শিক্ষক-কর্মচারীর সন্তান কোটা'];
+const QUOTA_BASE = [
+  'মুক্তিযোদ্ধা কোটা',
+  'প্রতিবন্ধী কোটা',
+  'ভাই-বোন কোটা',
+  'যমজ ভাই-বোন কোটা',
+  'শিক্ষা মন্ত্রণালয়ের কর্মকর্তা-কর্মচারীর সন্তান কোটা',
+  'সরকারি কর্মকর্তা-কর্মচারীর বদলিজনিত কোটা',
+  'বিদ্যালয়ের শিক্ষক-কর্মচারীর সন্তান কোটা'
+];
 
-/* মুক্তিযুদ্ধ বিষয়ক মন্ত্রণালয় নির্ধারিত ৩৩ ধরনের প্রমাণক */
 const FF_PROOFS = [
   '১. ভারতীয় তালিকা (পদ্মা)', '২. ভারতীয় তালিকা (মেঘনা)', '৩. ভারতীয় তালিকা (সেক্টর)',
   '৪. ভারতীয় তালিকা (সেনা, নৌ ও বিমানবাহিনী)', '৫. লাল মুক্তিবার্তা (চূড়ান্ত লাল বই)',
@@ -509,16 +516,77 @@ const FF_PROOFS = [
   '৩২. যুদ্ধাহত সেনা গেজেট', '৩৩. অন্যান্য সরকারি স্বীকৃত সনদ/প্রত্যয়ন'
 ];
 
+function getSelectedQuotas(p) {
+  return Array.from(document.querySelectorAll(`input[name="${p}quota-chk"]:checked`)).map(x => x.value);
+}
+
 function refreshQuota(p, keep) {
   const el = $(p + 'quota'); if (!el) return;
   const cls = p === 'f-' ? document.querySelector('[name=cls]:checked')?.value : ($('e-targetClass') || {}).value;
-  const cur = keep !== undefined ? keep : el.value;
-  let opts = QUOTA_BASE.concat(cls === '৬ষ্ঠ' ? [QUOTA_PRIMARY] : []);
-  if (p === 'e-' && cur && cur !== 'N/A' && !opts.includes(cur)) opts = opts.concat([cur]);
-  el.innerHTML = opts.map(o => `<option value="${esc(o)}" ${o === cur ? 'selected' : ''}>${esc(o)}</option>`).join('');
-  if (!opts.includes(cur)) el.value = opts[0];
+  const avail = QUOTA_BASE.concat(cls === '৬ষ্ঠ' ? [QUOTA_PRIMARY] : []);
+
+  let selected = [];
+  if (Array.isArray(keep)) {
+    selected = keep.filter(k => k && k !== 'সাধারণ' && k !== 'N/A');
+  } else if (typeof keep === 'string' && keep && keep !== 'সাধারণ' && keep !== 'N/A') {
+    selected = keep.split(',').map(s => s.trim()).filter(Boolean);
+  } else {
+    selected = getSelectedQuotas(p);
+  }
+  selected = selected.filter(k => avail.includes(k));
+
+  /* মূল select এলিমেন্ট লুকিয়ে তার মান আপডেট রাখা */
+  el.innerHTML = `<option value="${esc(selected.length ? selected.join(', ') : 'সাধারণ')}" selected>${esc(selected.length ? selected.join(', ') : 'সাধারণ')}</option>`;
+  el.value = selected.length ? selected.join(', ') : 'সাধারণ';
+  el.classList.add('hidden');
+
+  /* চেকবক্সের সুন্দর গ্রিড বক্স তৈরি */
+  let box = $(p + 'quota-multi');
+  if (!box) {
+    box = document.createElement('div');
+    box.id = p + 'quota-multi';
+    box.className = 'bg-stone-50 border border-stone-200 rounded-xl p-3 mt-1 space-y-2';
+    el.after(box);
+  }
+
+  box.innerHTML = `
+    <div class="flex justify-between items-center text-[11px] text-stone-500 border-b border-stone-200 pb-1.5">
+      <span>প্রযোজ্য কোটায় টিক দিন (একাধিক নির্বাচন করা যাবে)</span>
+      <span id="${p}quota-badge" class="font-bold text-emerald-800">${selected.length ? selected.length + 'টি নির্বাচিত' : 'সাধারণ (কোনো কোটা নেই)'}</span>
+    </div>
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-1.5 text-xs">
+      ${avail.map(o => {
+        const chk = selected.includes(o) ? 'checked' : '';
+        return `<label class="flex items-start gap-2 cursor-pointer p-1.5 rounded-lg border ${chk ? 'bg-emerald-50 border-emerald-400 font-semibold text-emerald-950' : 'bg-white border-stone-200 hover:bg-emerald-50/50'}">
+          <input type="checkbox" name="${p}quota-chk" value="${esc(o)}" ${chk} onchange="onQuotaMultiChange('${p}')" class="mt-0.5 rounded text-emerald-700">
+          <span class="leading-snug">${esc(o)}</span>
+        </label>`;
+      }).join('')}
+    </div>`;
+
   toggleFfBox(p);
 }
+
+window.onQuotaMultiChange = p => {
+  const sel = getSelectedQuotas(p);
+  const val = sel.length ? sel.join(', ') : 'সাধারণ';
+  const el = $(p + 'quota');
+  if (el) {
+    el.innerHTML = `<option value="${esc(val)}" selected>${esc(val)}</option>`;
+    el.value = val;
+  }
+  const badge = $(p + 'quota-badge');
+  if (badge) badge.textContent = sel.length ? sel.length + 'টি নির্বাচিত' : 'সাধারণ (কোনো কোটা নেই)';
+
+  /* টিক দেওয়া বক্সগুলো হাইলাইট আপডেট */
+  document.querySelectorAll(`input[name="${p}quota-chk"]`).forEach(cb => {
+    const lbl = cb.closest('label');
+    if (!lbl) return;
+    lbl.className = `flex items-start gap-2 cursor-pointer p-1.5 rounded-lg border ${cb.checked ? 'bg-emerald-50 border-emerald-400 font-semibold text-emerald-950' : 'bg-white border-stone-200 hover:bg-emerald-50/50'}`;
+  });
+
+  toggleFfBox(p);
+};
 
 function toggleFfBox(p, existingProofs, existingMis) {
   const qEl = $(p + 'quota'); if (!qEl) return;
@@ -529,9 +597,9 @@ function toggleFfBox(p, existingProofs, existingMis) {
     box.className = 'hidden md:col-span-2 bg-emerald-50/80 border border-emerald-300 rounded-xl p-3 space-y-3';
     qEl.parentElement.after(box);
   }
-  const isFF = qEl.value === 'মুক্তিযোদ্ধা কোটা';
-  box.classList.toggle('hidden', !isFF);
-  if (!isFF) { box.innerHTML = ''; return; }
+  const hasFF = getSelectedQuotas(p).includes('মুক্তিযোদ্ধা কোটা') || String(qEl.value || '').includes('মুক্তিযোদ্ধা কোটা');
+  box.classList.toggle('hidden', !hasFF);
+  if (!hasFF) { box.innerHTML = ''; return; }
 
   const prevMis = existingMis !== undefined
     ? (existingMis && existingMis !== 'N/A' ? existingMis : '')
@@ -574,7 +642,8 @@ window.addFfRow = (p, selType = '', serialVal = '') => {
 
 function readFfProofs(p) {
   const qEl = $(p + 'quota');
-  if (!qEl || qEl.value !== 'মুক্তিযোদ্ধা কোটা') return { misNo: '', proofs: [] };
+  const hasFF = getSelectedQuotas(p).includes('মুক্তিযোদ্ধা কোটা') || String(qEl?.value || '').includes('মুক্তিযোদ্ধা কোটা');
+  if (!hasFF) return { misNo: '', proofs: [] };
   const misNo = ($(p + 'ff-mis')?.value || '').trim();
   const rows = document.querySelectorAll(`#${p}ff-rows > div`);
   const proofs = [];
@@ -933,7 +1002,7 @@ window.submitForm = async e => {
     }));
     parentFix('f-', d);
     d.photo = await shrink(file, 260, 'image/jpeg');
-    if (d.quota === 'মুক্তিযোদ্ধা কোটা') {
+    if (String(d.quota || '').includes('মুক্তিযোদ্ধা কোটা')){
       const { misNo, proofs } = readFfProofs('f-');
       if (!misNo) {
         $btn('submit-btn', false, 'তথ্য জমা দিন ও পেমেন্টে যান ➔');
@@ -1130,8 +1199,8 @@ window.viewStudent = id => {
     <p class="text-sm text-gray-600">রোল: <strong>${esc(s.roll)}</strong> | ${esc(s.targetClass)} ${s.group !== 'N/A' ? '(' + esc(s.group) + ')' : ''}</p></div>
     <div class="space-y-1.5 text-sm border-t pt-4">
     ${row('জন্ম নিবন্ধন', s.birthRegNo)}${row('জন্ম তারিখ', s.dob)}${row('ধর্ম ও লিঙ্গ', s.religion + ' (' + s.gender + ')')}
-    ${parentRows(s, row)}${row('সহশিক্ষা কার্যক্রম', s.coCurricular)}${row('কোটা', s.quota)}${s.quota === 'মুক্তিযোদ্ধা কোটা' && s.ffMisNo && s.ffMisNo !== 'N/A' ? row('মুক্তিযোদ্ধার MIS নম্বর', s.ffMisNo) : ''}
-    ${s.quota === 'মুক্তিযোদ্ধা কোটা' && s.ffProofText && s.ffProofText !== 'N/A' ? row('মুক্তিযোদ্ধা প্রমাণক', s.ffProofText) : ''}${row('ঠিকানা', s.presentAddress)}
+    ${parentRows(s, row)}${row('সহশিক্ষা কার্যক্রম', s.coCurricular)}${row('কোটা', s.quota)}${String(s.quota || '').includes('মুক্তিযোদ্ধা কোটা') && s.ffMisNo && s.ffMisNo !== 'N/A' ? row('মুক্তিযোদ্ধার MIS নম্বর', s.ffMisNo) : ''}
+    ${String(s.quota || '').includes('মুক্তিযোদ্ধা কোটা') && s.ffProofText && s.ffProofText !== 'N/A' ? row('মুক্তিযোদ্ধা প্রমাণক', s.ffProofText) : ''}${row('ঠিকানা', s.presentAddress)}
     ${row('পূর্ববর্তী স্কুল', s.prevSchool + ' (' + s.prevResult + ')')}${row('পেমেন্ট', (ST[s.paymentStatus] || ST.Pending)[0] + ' | ' + (s.gateway || '-') + ' | TrxID: ' + (s.trxId || '-'))}</div>
     <div class="flex gap-2 justify-center mt-4 no-print"><button onclick="editStudent('${s.id}')" class="bg-indigo-600 text-white px-3 py-1.5 rounded-lg text-sm">✏️ সম্পাদনা</button><button onclick="printForm('${s.id}')" class="gold px-3 py-1.5 text-sm">📄 ভর্তি ফরম প্রিন্ট</button></div>`);
 };
@@ -1243,10 +1312,10 @@ function noticeHtml() {
   const nCm = committeeList.length, dense = nCm > 8 ? ' dense' : '', cmCols = nCm > 12 ? 5 : 4;
   const logo = siteLogo ? `<img class="lg" src="${siteLogo}" alt="">` : '<div class="lg"></div>';
   return `<div class="nt${dense}"><div class="band"></div><div class="ni">
-  <div class="hd">${logo}<div class="tt"><div class="sch">পানিপুর জেলা স্কুল</div><div class="tg">একটি ঐতিহ্যবাহী মনতেশ্বরী শিক্ষা প্রতিষ্ঠান</div><div style="font-size:8.5pt;color:#4b5563">হাটকালুপাড়া মহাসড়ক, পানিপুর</div></div>
+  <div class="hd">${logo}<div class="tt"><div class="sch">পানিপুর জেলা স্কুল</div><div class="tg">একটি মনতেশ্বরী শিক্ষা প্রতিষ্ঠান</div><div style="font-size:8.5pt;color:#4b5563">হাটকালুপাড়া মহাসড়ক, পানিপুর</div></div>
     <div><h1>ভর্তি বিজ্ঞপ্তি</h1><span class="rib">শিক্ষাবর্ষ ২০২৭ • ৩য়, ৬ষ্ঠ ও ৯ম শ্রেণি</span></div></div>
   <div class="dv"></div>
-  <div class="meta"><span>স্মারক নং: পাজেস্কু/ভর্তি/২০২৬/........</span><span>তারিখ: ${bdy(dates.applyStart)}</span></div>
+  <div class="meta"><span>স্মারক নং: পাজেস্কু/ভর্তি/২০২৬-০১.</span><span>তারিখ: ${bdy(dates.applyStart)}</span></div>
   <p class="in2">পানিপুর জেলা স্কুলে ২০২৭ শিক্ষাবর্ষে ৩য়, ৬ষ্ঠ ও ৯ম শ্রেণিতে মেধা যাচাই পরীক্ষার মাধ্যমে শিক্ষার্থী ভর্তি করা হবে। আগ্রহী অভিভাবকদের নির্ধারিত সময়ের মধ্যে <b>শুধুমাত্র অনলাইনে</b> আবেদন করার জন্য অনুরোধ করা হলো।</p>
   <h3>শ্রেণিভিত্তিক আসন সংখ্যা ও পরীক্ষার সময়</h3>
   <table><thead><tr><th style="width:9%">শ্রেণি</th><th style="width:25%">আসন ও বিবরণ</th><th style="width:28%">পরীক্ষার তারিখ ও সময়</th><th>পূর্ণমান ও পরীক্ষার সময়</th></tr></thead><tbody>${rows}</tbody></table>
@@ -1555,8 +1624,8 @@ function formHtml(s) {
     <div><small>আবেদনের তারিখ</small><b style="font-size:10.5pt">${bdy(when)}</b></div><div><small>অবস্থা</small><b style="font-size:10.5pt;color:#047857">আবেদন গৃহীত ✔</b></div></div>
   <h3>১. শিক্ষার্থীর তথ্য</h3><table>${two('শিক্ষার্থীর নাম', s.name, 'Name (English)', s.nameEn)}${two('জন্ম নিবন্ধন', s.birthRegNo, 'জন্ম তারিখ', s.dob)}${two('লিঙ্গ', s.gender, 'ধর্ম', s.religion)}${one('সহশিক্ষা কার্যক্রমে দক্ষতা', s.coCurricular)}</table>
   <h3>২. পিতা ও মাতার তথ্য</h3><table>${parentsHtml}</table>
-  <h3>৩. ঠিকানা ও শিক্ষাগত তথ্য</h3><table>${one('বর্তমান ঠিকানা', s.presentAddress)}${two('পূর্ববর্তী প্রতিষ্ঠান', s.prevSchool, 'পূর্ববর্তী ফলাফল', s.prevResult)}${one('বিশেষ কোটা', s.quota)}${s.quota === 'মুক্তিযোদ্ধা কোটা' && s.ffMisNo && s.ffMisNo !== 'N/A' ? one('মুক্তিযোদ্ধার MIS নম্বর', s.ffMisNo) : ''}
-  ${s.quota === 'মুক্তিযোদ্ধা কোটা' && s.ffProofText && s.ffProofText !== 'N/A' ? one('মুক্তিযোদ্ধা প্রমাণক', s.ffProofText) : ''}</table>
+  <h3>৩. ঠিকানা ও শিক্ষাগত তথ্য</h3><table>${one('বর্তমান ঠিকানা', s.presentAddress)}${two('পূর্ববর্তী প্রতিষ্ঠান', s.prevSchool, 'পূর্ববর্তী ফলাফল', s.prevResult)}${one('বিশেষ কোটা', s.quota)}${String(s.quota || '').includes('মুক্তিযোদ্ধা কোটা') && s.ffMisNo && s.ffMisNo !== 'N/A' ? one('মুক্তিযোদ্ধার MIS নম্বর', s.ffMisNo) : ''}
+  ${String(s.quota || '').includes('মুক্তিযোদ্ধা কোটা') && s.ffProofText && s.ffProofText !== 'N/A' ? one('মুক্তিযোদ্ধা প্রমাণক', s.ffProofText) : ''}</table>
   <div class="nx"><b>পরবর্তী করণীয়</b><ol>
     <li>ভর্তি ফি <b>২৫০ টাকা</b> বিকাশ/নগদে পাঠিয়ে ওয়েবসাইটের “পেমেন্ট” পেজে রোল, অভিভাবকের মোবাইল ও TrxID জমা দিন — <b>শেষ দিন ${bdy(dates.payEnd)}</b>।</li>
     <li>ফি যাচাই হলে <b>${bd(dates.admitStart)}</b> থেকে “এডমিট কার্ড” পেজ থেকে প্রবেশপত্র ডাউনলোড করুন।</li>
@@ -1598,7 +1667,7 @@ window.editStudent = id => {
     ${sections}
     <div class="mt-4"><label class="lb">ছবি বদলান (ঐচ্ছিক)</label><div class="flex items-center gap-3">${s.photo ? `<img src="${s.photo}" class="w-14 h-16 object-cover border rounded" alt="">` : ''}<input type="file" id="e-photo" accept="image/*" class="in text-xs"></div></div>
     <div class="flex gap-3 justify-center mt-5"><button id="e-save" class="btn">💾 সংরক্ষণ করুন</button><button type="button" onclick="closeModal()" class="bg-gray-500 text-white font-bold px-5 py-2 rounded-xl">বাতিল</button></div></form>`, false);
-  applyParents('e-', false); refreshQuota('e-', s.quota);if (s.quota === 'মুক্তিযোদ্ধা কোটা') toggleFfBox('e-', s.ffProofs || [], s.ffMisNo || '');
+ applyParents('e-', false); refreshQuota('e-', s.quota); if (String(s.quota || '').includes('মুক্তিযোদ্ধা কোটা')) toggleFfBox('e-', s.ffProofs || [], s.ffMisNo || '');
 };
 window.saveStudent = async (e, id) => {
   e.preventDefault();
@@ -1606,7 +1675,7 @@ window.saveStudent = async (e, id) => {
   const n = {};
   Object.values(FIELDS).forEach(([, list]) => list.forEach(([fid, , type]) => { if (type !== 'file') n[fid] = $('e-' + fid).value.trim() || 'N/A'; }));
   parentFix('e-', n);
-  if (n.quota === 'মুক্তিযোদ্ধা কোটা') {
+  if (String(n.quota || '').includes('মুক্তিযোদ্ধা কোটা')) {
     const { misNo, proofs } = readFfProofs('e-');
     if (!misNo) return toast('মুক্তিযোদ্ধা কোটার জন্য মুক্তিযোদ্ধার MIS নম্বর অবশ্যই দিন!', false);
     if (!proofs.length || proofs.some(x => !x.type || !x.serial)) return toast('মুক্তিযোদ্ধা কোটার প্রমাণকের ধরন ও ক্রমিক নম্বর দিন!', false);
