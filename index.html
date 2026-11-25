@@ -382,7 +382,7 @@ main>section:not(.hidden){animation:up .45s ease}
             <select id="f-grp" onchange="renderList()" class="p-2 border rounded-lg bg-emerald-50 font-bold"><option value="All">সকল বিভাগ</option><option>বিজ্ঞান</option><option>মানবিক</option><option>ব্যবসায় শিক্ষা</option></select>
             <select id="f-st" onchange="renderList()" class="p-2 border rounded-lg bg-emerald-50 font-bold"><option value="All">সকল স্ট্যাটাস</option><option value="Pending">অপেক্ষমাণ</option><option value="Submitted">যাচাই বাকি</option><option value="Paid">পরিশোধিত</option></select>
             <button onclick="exportCsv()" class="bg-green-700 text-white font-bold px-4 py-2 rounded-lg">Excel ডাউনলোড</button>
-            <button onclick="printRequisition()" class="bg-emerald-900 text-yellow-300 font-bold px-4 py-2 rounded-lg">📄 রিকুইজিশন ছক (PDF)</button>
+            <button onclick="printRequisition()" class="bg-emerald-900 text-yellow-300 font-bold px-4 py-2 rounded-lg">📄 রিকুইজিশন ছক (PDF)</button><button onclick="printQuotaList()" class="bg-amber-700 text-white font-bold px-4 py-2 rounded-lg">🎖️ কোটা যাচাই তালিকা (PDF)</button>
           </div>
         </div>
         <div class="overflow-x-auto">
@@ -1389,7 +1389,7 @@ window.exportCsv = () => {
       const dobReg = `${esc(a.dob)}<br><small>${esc(a.birthRegNo)}</small>`;
       const clsInfo = `${esc(a.targetClass)}${a.group && a.group !== 'N/A' ? ' (' + esc(a.group) + ')' : ''}`;
       const misLine = a.ffMisNo && a.ffMisNo !== 'N/A' ? `<div><small>MIS: <b>${esc(a.ffMisNo)}</b></small></div>` : '';
-      const quotaInfo = a.quota === 'মুক্তিযোদ্ধা কোটা'
+      const quotaInfo = String(a.quota || '').includes('মুক্তিযোদ্ধা কোটা')
         ? `<b>${esc(a.quota)}</b>${misLine}${a.ffProofText && a.ffProofText !== 'N/A' ? `<br><small>${esc(a.ffProofText)}</small>` : ''}`
         : esc(a.quota || 'সাধারণ');
       rowsHtml += `<tr>
@@ -1406,7 +1406,67 @@ window.exportCsv = () => {
       rowsHtml += `<tr style="height:9mm"><td style="text-align:center">${bnSl}</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>`;
     }
   }
+window.printQuotaList = () => {
+  const q = en($('f-q').value.trim().toLowerCase()), c = $('f-cls').value, g = $('f-grp').value, s = $('f-st').value;
+  const quotaApplicants = applicants.filter(a => {
+    const hasQuota = a.quota && String(a.quota).trim() !== '' && String(a.quota).trim() !== 'সাধারণ' && String(a.quota).trim() !== 'N/A';
+    if (!hasQuota) return false;
+    return (c === 'All' || a.targetClass === c)
+      && (g === 'All' || (a.targetClass === '৯ম' && a.group === g))
+      && (s === 'All' || a.paymentStatus === s)
+      && (!q || [a.name, a.roll, a.fatherPhone, a.quota, a.ffMisNo].some(v => String(v || '').toLowerCase().includes(q)));
+  });
 
+  if (!quotaApplicants.length) return toast('নির্বাচিত ফিল্টারে কোনো কোটা আবেদনকারী পাওয়া যায়নি!', false);
+
+  const rowsHtml = quotaApplicants.map((a, idx) => {
+    const clsInfo = `${esc(a.targetClass)}${a.group && a.group !== 'N/A' ? ' (' + esc(a.group) + ')' : ''}`;
+    const hasFF = String(a.quota || '').includes('মুক্তিযোদ্ধা কোটা');
+    const misTxt = (hasFF && a.ffMisNo && a.ffMisNo !== 'N/A') ? `<div><small>MIS: <b>${esc(a.ffMisNo)}</b></small></div>` : '';
+    const proofTxt = (hasFF && a.ffProofText && a.ffProofText !== 'N/A') ? `<div style="margin-top:2px"><small>প্রমাণক: ${esc(a.ffProofText)}</small></div>` : '';
+    const stInfo = (ST[a.paymentStatus] || ST.Pending)[0];
+    return `<tr>
+      <td style="text-align:center">${toBn(idx + 1)}</td>
+      <td style="text-align:center"><b>${esc(a.roll)}</b></td>
+      <td><b>${esc(a.name)}</b>${a.nameEn && a.nameEn !== 'N/A' ? `<br><small>${esc(a.nameEn)}</small>` : ''}</td>
+      <td style="text-align:center">${clsInfo}</td>
+      <td><b>${esc(a.quota)}</b>${misTxt}${proofTxt}</td>
+      <td>জন্ম নিবন্ধন: ${esc(a.birthRegNo || '—')}<br>পিতা: ${esc(a.fatherName || '—')}<br>মোবাইল: <b>${esc(a.fatherPhone || '—')}</b></td>
+      <td style="text-align:center">${esc(stInfo)}</td>
+      <td style="height:14mm"></td>
+    </tr>`;
+  }).join('');
+
+  const clsTitle = c === 'All' ? 'সকল শ্রেণি' : c + ' শ্রেণি';
+  const html = `<div class="pg" style="font-family:'Hind Siliguri',sans-serif">
+    <div style="text-align:center;margin-bottom:4mm">
+      <div style="font-size:11pt;font-weight:700">গণপ্রজাতন্ত্রী বাংলাদেশ সরকার</div>
+      <div style="font-size:15pt;font-weight:800;color:#064e3b">পানিপুর জেলা স্কুল, পানিপুর</div>
+      <div style="font-size:11.5pt;font-weight:700;margin-top:1mm;text-decoration:underline">কোটা যাচাই-বাছাই উপকমিটির জন্য কোটা আবেদনকারীর বিস্তারিত তালিকা</div>
+      <div style="font-size:9.5pt;color:#374151;margin-top:1mm">শিক্ষাবর্ষ: ২০২৭ | শ্রেণি: <b>${esc(clsTitle)}</b> | মোট কোটা আবেদনকারী: <b>${toBn(quotaApplicants.length)}</b> জন</div>
+    </div>
+    <table class="pt" style="font-size:8.8pt;width:100%">
+      <thead>
+        <tr style="background:#064e3b;color:#fff">
+          <th style="width:5%;text-align:center">ক্রম</th>
+          <th style="width:9%;text-align:center">রোল</th>
+          <th style="width:16%">শিক্ষার্থীর নাম<br>(বাংলা ও ইংরেজি)</th>
+          <th style="width:9%;text-align:center">শ্রেণি/বিভাগ</th>
+          <th style="width:23%">প্রযোজ্য কোটা, MIS ও প্রমাণক</th>
+          <th style="width:19%">জন্ম নিবন্ধন, পিতা ও মোবাইল</th>
+          <th style="width:8%;text-align:center">ফি অবস্থা</th>
+          <th style="width:14%;text-align:center">যাচাই মন্তব্য ও স্বাক্ষর</th>
+        </tr>
+      </thead>
+      <tbody>${rowsHtml}</tbody>
+    </table>
+    <div style="display:flex;justify-content:space-between;margin-top:14mm;font-size:9.5pt">
+      <div style="border-top:1px solid #111;padding-top:1mm;width:58mm;text-align:center">সদস্য-সচিব, কোটা যাচাই-বাছাই উপকমিটি</div>
+      <div style="border-top:1px solid #111;padding-top:1mm;width:58mm;text-align:center">আহ্বায়ক, কোটা যাচাই-বাছাই উপকমিটি</div>
+    </div>
+  </div>`;
+  printHtml(html);
+};
   const clsTitle = c === 'All' ? 'সকল শ্রেণি' : c + ' শ্রেণি';
   const html = `<div class="pg" style="font-family:'Hind Siliguri',sans-serif">
     <div style="text-align:center;margin-bottom:4mm">
