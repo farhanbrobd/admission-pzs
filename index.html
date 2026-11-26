@@ -394,14 +394,54 @@ main>section:not(.hidden){animation:up .45s ease}
       </div>
 
       <div id="a-cm" class="hidden card">
-        <h4 class="font-bold text-emerald-900 mb-4 border-b pb-2">ভর্তি কমিটির সদস্য</h4>
-        <form onsubmit="addCm(event)" class="grid grid-cols-1 md:grid-cols-4 gap-3 text-sm mb-4">
-          <input id="cm-n" placeholder="নাম" required class="in"><input id="cm-d" placeholder="পদবি" required class="in">
-          <input id="cm-p" placeholder="মোবাইল" required class="in"><button class="btn">যোগ করুন</button>
+        <div class="flex flex-wrap justify-between items-center gap-2 mb-4 border-b pb-2">
+          <h4 class="font-bold text-emerald-900">ভর্তি কমিটি ও উপকমিটির সদস্য ব্যবস্থাপনা</h4>
+          <button type="button" onclick="sortChairFirst()" class="bg-amber-100 text-amber-900 border border-amber-300 text-xs font-bold px-3 py-1.5 rounded-lg">👑 সভাপতিকে সবার আগে আনুন</button>
+        </div>
+        <form onsubmit="addCm(event)" class="grid grid-cols-1 md:grid-cols-12 gap-3 text-sm mb-4 bg-stone-50 p-3 rounded-2xl border">
+          <div class="md:col-span-3">
+            <label class="lb text-xs">কমিটি / উপকমিটি *</label>
+            <select id="cm-grp" onchange="toggleCmSubInput()" class="in text-xs">
+              <option value="ভর্তি কমিটি (মূল কমিটি)">ভর্তি কমিটি (মূল কমিটি)</option>
+              <option value="প্রশ্নপত্র প্রণয়ন ও মডারেশন উপকমিটি">প্রশ্নপত্র প্রণয়ন ও মডারেশন উপকমিটি</option>
+              <option value="কোটা ও কাগজপত্র যাচাই-বাছাই উপকমিটি">কোটা ও কাগজপত্র যাচাই-বাছাই উপকমিটি</option>
+              <option value="পরীক্ষা কেন্দ্র প্রস্তুতি, শৃঙ্খলা, সড়ক নিরাপত্তা ও যানজট নিরসন উপকমিটি">পরীক্ষা কেন্দ্র প্রস্তুতি, শৃঙ্খলা, সড়ক নিরাপত্তা ও যানজট নিরসন উপকমিটি</option>
+              <option value="উত্তরপত্র কোডিং ও মূল্যায়ন উপকমিটি">উত্তরপত্র কোডিং ও মূল্যায়ন উপকমিটি</option>
+              <option value="তথ্য রিকুইজিশন, ওয়েবসাইট/পোর্টাল ও ফলাফল ব্যবস্থাপনা উপকমিটি">তথ্য রিকুইজিশন, ওয়েবসাইট/পোর্টাল ও ফলাফল ব্যবস্থাপনা উপকমিটি</option>
+              <option value="অভিযোগ ও আপিল নিষ্পত্তি উপকমিটি">অভিযোগ ও আপিল নিষ্পত্তি উপকমিটি</option>
+              <option value="__custom__">+ অন্যান্য / নতুন উপকমিটি লিখুন</option>
+            </select>
+            <input id="cm-grp-custom" placeholder="উপকমিটির নাম লিখুন *" class="in text-xs mt-2 hidden">
+          </div>
+          <div class="md:col-span-3">
+            <label class="lb text-xs">নাম *</label>
+            <input id="cm-n" placeholder="সদস্যের পূর্ণ নাম" required class="in text-xs">
+          </div>
+          <div class="md:col-span-2">
+            <label class="lb text-xs">কমিটিতে পদবি *</label>
+            <select id="cm-role" onchange="toggleCmRoleCustom()" class="in text-xs">
+              <option value="সভাপতি">সভাপতি</option>
+              <option value="আহ্বায়ক">আহ্বায়ক</option>
+              <option value="সদস্য-সচিব">সদস্য-সচিব</option>
+              <option value="সদস্য" selected>সদস্য</option>
+              <option value="__custom__">অন্য পদবি লিখুন</option>
+            </select>
+            <input id="cm-role-custom" placeholder="যেমন: প্রধান শিক্ষক" class="in text-xs mt-2 hidden">
+          </div>
+          <div class="md:col-span-2">
+            <label class="lb text-xs">কর্মস্থল / অতিরিক্ত পদবি</label>
+            <input id="cm-d" placeholder="যেমন: পানিপুর জেলা স্কুল" class="in text-xs">
+          </div>
+          <div class="md:col-span-2 flex flex-col justify-end">
+            <label class="lb text-xs">মোবাইল *</label>
+            <div class="flex gap-1.5">
+              <input id="cm-p" placeholder="017xxxxxxxx" required class="in text-xs">
+              <button class="btn text-xs px-3 shrink-0">যোগ</button>
+            </div>
+          </div>
         </form>
         <div id="cm-admin" class="space-y-2 text-sm"></div>
       </div>
-
       <div id="a-seat" class="hidden space-y-6">
         <div class="card">
           <h4 class="font-bold text-emerald-900 mb-1 border-b pb-2">🪑 পরীক্ষার সিট প্ল্যান</h4>
@@ -882,7 +922,9 @@ function renderPublic() {
     <p class="text-xs text-gray-600 leading-relaxed">${esc(examConfigs[c.label])}</p><p class="text-[11px] font-bold text-emerald-800 mt-2">✍️ ${esc(examLine(c.label))}</p></div>`).join('');
   $('cm-view').innerHTML = committeeList.length ? committeeList.map(c => `<div class="card text-center !p-4">
     <div class="w-12 h-12 mx-auto mb-2 rounded-full bg-emerald-800 text-yellow-300 ser font-bold text-xl flex items-center justify-center">${esc([...c.name][0] || '')}</div>
-    <p class="font-bold text-emerald-900">${esc(c.name)}</p><p class="text-xs text-gray-600">${esc(c.designation)}</p>
+    <p class="font-bold text-emerald-900">${esc(c.name)}</p>
+    <p class="text-xs font-semibold text-gray-700">${esc(formatCmDesignation(c))}</p>
+    ${c.committeeName ? `<p class="text-[11px] text-emerald-800 mt-0.5">${esc(c.committeeName)}</p>` : ''}
     <p class="text-xs text-emerald-700 font-bold mt-1">📞 ${esc(c.phone)}</p></div>`).join('')
     : '<p class="text-sm text-gray-500">শীঘ্রই জানানো হবে।</p>';
   if (siteLogo) { $('logo').src = siteLogo; $('logo').classList.remove('hidden'); $('logo-ico').classList.add('hidden'); $('ac-logo').src = siteLogo; $('ac-logo').classList.remove('hidden'); }
@@ -1223,24 +1265,198 @@ window.saveCfg = async e => {
   document.querySelectorAll('[data-c]').forEach(i => { if (i.value.trim()) examConfigs[i.dataset.c] = i.value.trim(); });
   try { await saveCfgDoc(); datesSaved = true; renderPublic(); renderAdmin(); toast('সংরক্ষিত হয়েছে — সব ডিভাইসে দেখা যাবে'); } catch (err) { examConfigs = old; dates = oldD; fail(err, 'সেভ হয়নি।'); }
 };
-function renderCmAdmin() {
-  $('cm-admin').innerHTML = committeeList.map((c, i) => `<div class="flex justify-between items-center p-2 bg-gray-50 border rounded-xl">
-    <span><strong>${esc(c.name)}</strong> (${esc(c.designation)}) - ${esc(c.phone)}</span><button onclick="rmCm(${i})" class="text-red-600 font-bold">মুছুন</button></div>`).join('');
+const CM_ROLES = ['সভাপতি', 'আহ্বায়ক', 'সদস্য-সচিব', 'সদস্য'];
+const CM_GROUPS = [
+  'ভর্তি কমিটি (মূল কমিটি)',
+  'প্রশ্নপত্র প্রণয়ন ও মডারেশন উপকমিটি',
+  'কোটা ও কাগজপত্র যাচাই-বাছাই উপকমিটি',
+  'পরীক্ষা কেন্দ্র প্রস্তুতি, শৃঙ্খলা, সড়ক নিরাপত্তা ও যানজট নিরসন উপকমিটি',
+  'উত্তরপত্র কোডিং ও মূল্যায়ন উপকমিটি',
+  'তথ্য রিকুইজিশন, ওয়েবসাইট/পোর্টাল ও ফলাফল ব্যবস্থাপনা উপকমিটি',
+  'অভিযোগ ও আপিল নিষ্পত্তি উপকমিটি'
+];
+
+window.toggleCmSubInput = () => {
+  const s = $('cm-grp'), inp = $('cm-grp-custom');
+  if (!s || !inp) return;
+  const isC = s.value === '__custom__';
+  inp.classList.toggle('hidden', !isC);
+  inp.required = isC;
+};
+
+window.toggleCmRoleCustom = () => {
+  const s = $('cm-role'), inp = $('cm-role-custom');
+  if (!s || !inp) return;
+  const isC = s.value === '__custom__';
+  inp.classList.toggle('hidden', !isC);
+  inp.required = isC;
+};
+
+function getCmGroupVal(selectId, customId) {
+  const v = $(selectId)?.value || 'ভর্তি কমিটি (মূল কমিটি)';
+  return v === '__custom__' ? ($(customId)?.value.trim() || 'ভর্তি কমিটি (মূল কমিটি)') : v;
 }
+
+function getCmRoleVal(selectId, customId) {
+  const v = $(selectId)?.value || 'সদস্য';
+  return v === '__custom__' ? ($(customId)?.value.trim() || 'সদস্য') : v;
+}
+
+function formatCmDesignation(c) {
+  const role = (c.role || '').trim();
+  const extra = (c.designation || '').trim();
+  if (role && extra) return `${role}, ${extra}`;
+  return role || extra || 'সদস্য';
+}
+
+function renderCmAdmin() {
+  const el = $('cm-admin'); if (!el) return;
+  el.innerHTML = committeeList.map((c, i) => {
+    const grp = c.committeeName || 'ভর্তি কমিটি (মূল কমিটি)';
+    const desigTxt = formatCmDesignation(c);
+    return `<div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 p-2.5 bg-gray-50 border rounded-xl">
+      <div>
+        <span class="text-[11px] inline-block bg-emerald-100 text-emerald-900 font-bold px-2 py-0.5 rounded-full mb-1">${esc(grp)}</span>
+        <div><strong>${esc(c.name)}</strong> — <span class="text-emerald-900 font-semibold">${esc(desigTxt)}</span></div>
+        <div class="text-xs text-gray-600">📞 ${esc(c.phone)}</div>
+      </div>
+      <div class="flex items-center gap-1.5 shrink-0">
+        <button type="button" onclick="moveCm(${i},-1)" ${i === 0 ? 'disabled' : ''} class="px-2 py-1 border rounded bg-white text-xs font-bold disabled:opacity-30" title="উপরে নিন">↑</button>
+        <button type="button" onclick="moveCm(${i},1)" ${i === committeeList.length - 1 ? 'disabled' : ''} class="px-2 py-1 border rounded bg-white text-xs font-bold disabled:opacity-30" title="নিচে নিন">↓</button>
+        <button type="button" onclick="editCm(${i})" class="bg-indigo-600 text-white text-xs font-bold px-2.5 py-1 rounded">✏️ এডিট</button>
+        <button type="button" onclick="rmCm(${i})" class="bg-red-600 text-white text-xs font-bold px-2.5 py-1 rounded">মুছুন</button>
+      </div>
+    </div>`;
+  }).join('') || '<p class="text-sm text-gray-500">এখনো কোনো সদস্য যুক্ত করা হয়নি।</p>';
+}
+
 window.addCm = async e => {
   e.preventDefault();
   try { await freshCfg(); } catch (x) {}
-  committeeList.push({ name: $('cm-n').value.trim(), designation: $('cm-d').value.trim(), phone: $('cm-p').value.trim() });
-  try { await saveCfgDoc(); ['cm-n', 'cm-d', 'cm-p'].forEach(i => $(i).value = ''); renderCmAdmin(); renderPublic(); toast('কমিটিতে যোগ হয়েছে'); }
-  catch (err) { committeeList.pop(); fail(err, 'সেভ হয়নি।'); }
+  const item = {
+    committeeName: getCmGroupVal('cm-grp', 'cm-grp-custom'),
+    name: $('cm-n').value.trim(),
+    role: getCmRoleVal('cm-role', 'cm-role-custom'),
+    designation: $('cm-d').value.trim(),
+    phone: $('cm-p').value.trim()
+  };
+  committeeList.push(item);
+  try {
+    await saveCfgDoc();
+    ['cm-n', 'cm-d', 'cm-p', 'cm-grp-custom', 'cm-role-custom'].forEach(id => { if ($(id)) $(id).value = ''; });
+    $('cm-grp').value = 'ভর্তি কমিটি (মূল কমিটি)';
+    $('cm-role').value = 'সদস্য';
+    toggleCmSubInput(); toggleCmRoleCustom();
+    renderCmAdmin(); renderPublic();
+    toast('কমিটিতে সদস্য যুক্ত হয়েছে');
+  } catch (err) {
+    committeeList.pop(); fail(err, 'সেভ হয়নি।');
+  }
 };
+
+window.editCm = i => {
+  const c = committeeList[i]; if (!c) return;
+  const curGrp = c.committeeName || 'ভর্তি কমিটি (মূল কমিটি)';
+  const isCustomGrp = !CM_GROUPS.includes(curGrp);
+  const curRole = c.role || (CM_ROLES.find(r => (c.designation || '').startsWith(r)) || 'সদস্য');
+  const isCustomRole = !CM_ROLES.includes(curRole);
+
+  showModal(`<form onsubmit="saveCmEdit(event,${i})" class="text-sm space-y-3">
+    <h3 class="ser text-lg font-bold text-emerald-900">✏️ কমিটির সদস্য সম্পাদনা</h3>
+    <div>
+      <label class="lb">কমিটি / উপকমিটি *</label>
+      <select id="ed-cm-grp" onchange="const x=this.value==='__custom__';$('ed-cm-grp-c').classList.toggle('hidden',!x);$('ed-cm-grp-c').required=x;" class="in text-xs">
+        ${CM_GROUPS.map(g => `<option value="${esc(g)}" ${!isCustomGrp && g === curGrp ? 'selected' : ''}>${esc(g)}</option>`).join('')}
+        <option value="__custom__" ${isCustomGrp ? 'selected' : ''}>+ অন্যান্য / নতুন উপকমিটি</option>
+      </select>
+      <input id="ed-cm-grp-c" value="${esc(isCustomGrp ? curGrp : '')}" placeholder="উপকমিটির নাম লিখুন" class="in text-xs mt-2 ${isCustomGrp ? '' : 'hidden'}" ${isCustomGrp ? 'required' : ''}>
+    </div>
+    <div>
+      <label class="lb">নাম *</label>
+      <input id="ed-cm-n" value="${esc(c.name)}" required class="in text-xs">
+    </div>
+    <div>
+      <label class="lb">কমিটিতে পদবি *</label>
+      <select id="ed-cm-role" onchange="const x=this.value==='__custom__';$('ed-cm-role-c').classList.toggle('hidden',!x);$('ed-cm-role-c').required=x;" class="in text-xs">
+        ${CM_ROLES.map(r => `<option value="${esc(r)}" ${!isCustomRole && r === curRole ? 'selected' : ''}>${esc(r)}</option>`).join('')}
+        <option value="__custom__" ${isCustomRole ? 'selected' : ''}>অন্য পদবি লিখুন</option>
+      </select>
+      <input id="ed-cm-role-c" value="${esc(isCustomRole ? curRole : '')}" placeholder="পদবি লিখুন" class="in text-xs mt-2 ${isCustomRole ? '' : 'hidden'}" ${isCustomRole ? 'required' : ''}>
+    </div>
+    <div>
+      <label class="lb">কর্মস্থল / অতিরিক্ত পদবি</label>
+      <input id="ed-cm-d" value="${esc(c.designation || '')}" class="in text-xs">
+    </div>
+    <div>
+      <label class="lb">মোবাইল *</label>
+      <input id="ed-cm-p" value="${esc(c.phone || '')}" required class="in text-xs">
+    </div>
+    <div class="flex gap-2 justify-center pt-2">
+      <button class="btn text-xs">💾 আপডেট করুন</button>
+      <button type="button" onclick="closeModal()" class="bg-gray-500 text-white font-bold px-4 py-2 rounded-xl text-xs">বাতিল</button>
+    </div>
+  </form>`, false);
+};
+
+window.saveCmEdit = async (e, i) => {
+  e.preventDefault();
+  const prev = committeeList[i]; if (!prev) return;
+  try { await freshCfg(); } catch (x) {}
+  const updated = {
+    committeeName: getCmGroupVal('ed-cm-grp', 'ed-cm-grp-c'),
+    name: $('ed-cm-n').value.trim(),
+    role: getCmRoleVal('ed-cm-role', 'ed-cm-role-c'),
+    designation: $('ed-cm-d').value.trim(),
+    phone: $('ed-cm-p').value.trim()
+  };
+  committeeList[i] = updated;
+  try {
+    await saveCfgDoc();
+    closeModal(); renderCmAdmin(); renderPublic();
+    toast('সদস্যের তথ্য আপডেট হয়েছে');
+  } catch (err) {
+    committeeList[i] = prev; fail(err, 'আপডেট হয়নি।');
+  }
+};
+
+window.moveCm = async (i, dir) => {
+  const j = i + dir;
+  if (j < 0 || j >= committeeList.length) return;
+  try { await freshCfg(); } catch (x) {}
+  const copy = [...committeeList];
+  [copy[i], copy[j]] = [copy[j], copy[i]];
+  committeeList = copy;
+  try {
+    await saveCfgDoc(); renderCmAdmin(); renderPublic();
+  } catch (err) {
+    fail(err, 'ক্রম পরিবর্তন সংরক্ষণ হয়নি।');
+  }
+};
+
+window.sortChairFirst = async () => {
+  try { await freshCfg(); } catch (x) {}
+  const copy = [...committeeList].sort((a, b) => {
+    const aChair = /সভাপতি/.test((a.role || '') + ' ' + (a.designation || '')) ? 0 : 1;
+    const bChair = /সভাপতি/.test((b.role || '') + ' ' + (b.designation || '')) ? 0 : 1;
+    return aChair - bChair;
+  });
+  committeeList = copy;
+  try {
+    await saveCfgDoc(); renderCmAdmin(); renderPublic();
+    toast('সভাপতির নাম সবার আগে সাজানো হয়েছে');
+  } catch (err) {
+    fail(err, 'সংরক্ষণ হয়নি।');
+  }
+};
+
 window.rmCm = async i => {
   const tg = committeeList[i]; if (!tg) return;
   try { await freshCfg(); } catch (x) {}
-  const j = committeeList.findIndex(c => c.name === tg.name && c.phone === tg.phone && c.designation === tg.designation);
+  const j = committeeList.findIndex(c => c.name === tg.name && c.phone === tg.phone && formatCmDesignation(c) === formatCmDesignation(tg));
   if (j < 0) { renderCmAdmin(); renderPublic(); return; }
   const [r] = committeeList.splice(j, 1);
-  try { await saveCfgDoc(); renderCmAdmin(); renderPublic(); } catch (err) { committeeList.splice(j, 0, r); fail(err, 'মোছা যায়নি।'); }
+  try { await saveCfgDoc(); renderCmAdmin(); renderPublic(); }
+  catch (err) { committeeList.splice(j, 0, r); fail(err, 'মোছা যায়নি।'); }
 };
 window.uploadBrand = async (e, key) => {
   const f = e.target.files[0]; if (!f) return;
