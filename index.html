@@ -920,6 +920,16 @@ function formatCmDesignation(c) {
   if (role && extra) return `${role}, ${extra}`;
   return role || extra || 'সদস্য';
 }
+function formatCmName(c) {
+  let rawName = String(c?.name || '').trim();
+  if (!rawName) return '';
+  const info = `${rawName} ${c?.role || ''} ${c?.designation || ''}`;
+  // সিভিল সার্জন বা চিকিৎসক হলে নামের আগে "ডা." (বা "ডাক্তার") বসবে
+  const isDoctor = /সিভিল\s*সার্জন|ডা\.|ডাক্তার|সিদরাতুল\s*মুনতাহা/i.test(info);
+  // আগে থেকে জনাব/ডা./ডাক্তার লেখা থাকলে তা পরিষ্কার করে নেওয়া হচ্ছে যাতে ডাবল না হয়
+  rawName = rawName.replace(/^(জনাব|ডা\.|ডাক্তার)\s+/i, '').trim();
+  return isDoctor ? `ডা. ${rawName}` : `জনাব ${rawName}`;
+}  
 function renderPublic() {
   renderTimeline(); applyGate();
   $('cfg-view').innerHTML = CLASSES.map(c => `<div class="card top text-center">
@@ -927,7 +937,7 @@ function renderPublic() {
     <p class="text-xs text-gray-600 leading-relaxed">${esc(examConfigs[c.label])}</p><p class="text-[11px] font-bold text-emerald-800 mt-2">✍️ ${esc(examLine(c.label))}</p></div>`).join('');
   $('cm-view').innerHTML = committeeList.length ? committeeList.map(c => `<div class="card text-center !p-4">
     <div class="w-12 h-12 mx-auto mb-2 rounded-full bg-emerald-800 text-yellow-300 ser font-bold text-xl flex items-center justify-center">${esc([...c.name][0] || '')}</div>
-    <p class="font-bold text-emerald-900">${esc(c.name)}</p>
+   <p class="font-bold text-emerald-900">${esc(formatCmName(c))}</p>
     <p class="text-xs font-semibold text-gray-700">${esc(formatCmDesignation(c))}</p>
     ${c.committeeName ? `<p class="text-[11px] text-emerald-800 mt-0.5">${esc(c.committeeName)}</p>` : ''}
     <p class="text-xs text-emerald-700 font-bold mt-1">📞 ${esc(c.phone)}</p></div>`).join('')
@@ -1340,7 +1350,7 @@ function renderCmAdmin() {
     return `<div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 p-2.5 bg-gray-50 border rounded-xl">
       <div>
         <span class="text-[11px] inline-block bg-emerald-100 text-emerald-900 font-bold px-2 py-0.5 rounded-full mb-1">${esc(grp)}</span>
-        <div><strong>${esc(c.name)}</strong> — <span class="text-emerald-900 font-semibold">${esc(desigTxt)}</span></div>
+        <div><strong>${esc(formatCmName(c))}</strong> — <span class="text-emerald-900 font-semibold">${esc(desigTxt)}</span></div>
         <div class="text-xs text-gray-600">📞 ${esc(c.phone)}</div>
       </div>
       <div class="flex items-center gap-1.5 shrink-0">
@@ -1548,7 +1558,7 @@ function noticeHtml() {
   const a2 = new Date(dates.admitStart.getTime() + 864e5);
   const admitTxt = `${bdf(dates.admitStart, { day: 'numeric' })} ও ${bdf(a2, { day: 'numeric' })} ${bdf(dates.admitStart, { month: 'long', year: 'numeric' })}`;
   const secM = committeeList.find(c => /সদস্য[\s-]?সচিব/.test((c.role || '') + ' ' + (c.designation || '')));
-  const sec = secM ? { name: secM.name, designation: formatCmDesignation(secM) } : { name: messages.head.name, designation: messages.head.desig };
+  const sec = secM ? { name: formatCmName(secM), designation: formatCmDesignation(secM) } : { name: messages.head.name, designation: messages.head.desig };
   const qr = qrSvg(base);
   const nCm = committeeList.length, dense = nCm > 8 ? ' dense' : '', cmCols = nCm > 12 ? 5 : 4;
   const logo = siteLogo ? `<img class="lg" src="${siteLogo}" alt="">` : '<div class="lg"></div>';
@@ -1582,7 +1592,7 @@ function noticeHtml() {
     <li>একজন শিক্ষার্থীর জন্য একটিই আবেদন করুন। ভুল তথ্যে আবেদন বাতিল হতে পারে।</li>
     <li>নির্ধারিত সময়ের পর আবেদন ও ফি গ্রহণ করা হবে না।</li>
     <li>পরীক্ষার দিন প্রবেশপত্রের প্রিন্ট কপি সঙ্গে আনতে হবে।</li></ul></div></div>
-  ${committeeList.length ? `<h3>ভর্তি কমিটি</h3><div class="cmg" style="grid-template-columns:repeat(${cmCols},1fr)">${committeeList.map(c => `<div><b>${esc(c.name)}</b>${esc(formatCmDesignation(c))}</div>`).join('')}</div>` : ''}
+ ${committeeList.length ? `<h3>ভর্তি কমিটি</h3><div class="cmg" style="grid-template-columns:repeat(${cmCols},1fr)">${committeeList.map(c => `<div><b>${esc(formatCmName(c))}</b>${esc(formatCmDesignation(c))}</div>`).join('')}</div>` : ''}
   </div>
   <div class="ftr"><div><b>ঠিকানা:</b> হাটকালুপাড়া মহাসড়ক, পানিপুর<br><b>ওয়েবসাইট:</b> ${esc(shown)}</div>
     <div class="sgn">${siteSig ? `<img src="${siteSig}" alt="">` : '<div style="height:11mm"></div>'}<b>${esc(sec.name)}</b>${esc(sec.designation)}${/ভর্তি কমিটি/.test(sec.designation) ? '' : ', ভর্তি কমিটি'}<br>পানিপুর জেলা স্কুল</div></div>
