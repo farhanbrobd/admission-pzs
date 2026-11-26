@@ -934,7 +934,8 @@ function renderPublic() {
     : '<p class="text-sm text-gray-500">শীঘ্রই জানানো হবে।</p>';
   if (siteLogo) { $('logo').src = siteLogo; $('logo').classList.remove('hidden'); $('logo-ico').classList.add('hidden'); $('ac-logo').src = siteLogo; $('ac-logo').classList.remove('hidden'); }
   if (siteSig) { $('ac-sig').src = siteSig; $('ac-sig').classList.remove('hidden'); }
-  renderMsgs(); if (window.renderNotice) window.renderNotice();
+  renderMsgs();
+  if (typeof window.renderNotice === 'function') window.renderNotice();
 }
 
 buildForm(); renderPublic(); go('home');
@@ -1009,18 +1010,35 @@ async function loadPublic() {
   try {
     const s = await getDoc(doc(db, 'settings', 'school_config'));
     cfgLoaded = true;
-    if (s.exists()) { const d = s.data(); examConfigs = d.examConfigs || examConfigs; committeeList = d.committeeList || []; DATE_KEYS.forEach(k => { if (d[k] && d[k].toDate) dates[k] = d[k].toDate(); }); datesSaved = DATE_KEYS.every(k => d[k]); }
-    const b = await getDoc(doc(db, 'settings', 'branding'));
-    if (b.exists()) { siteLogo = b.data().logo || ''; siteSig = b.data().signature || ''; }
+    if (s.exists()) {
+      const d = s.data();
+      if (d.examConfigs) examConfigs = d.examConfigs;
+      if (Array.isArray(d.committeeList)) committeeList = d.committeeList;
+      DATE_KEYS.forEach(k => { if (d[k] && typeof d[k].toDate === 'function') dates[k] = d[k].toDate(); });
+      datesSaved = DATE_KEYS.every(k => d[k]);
+    }
+    try {
+      const b = await getDoc(doc(db, 'settings', 'branding'));
+      if (b.exists()) { siteLogo = b.data().logo || ''; siteSig = b.data().signature || ''; }
+    } catch (e) { console.warn('লোগো/স্বাক্ষর লোড হয়নি', e); }
     try {
       const mg = await getDoc(doc(db, 'settings', 'messages'));
-      if (mg.exists()) { const d = mg.data(); ['head', 'asst'].forEach(k => { const x = d[k] || {}; ['name', 'desig', 'text', 'photo'].forEach(f => { if (x[f]) messages[k][f] = x[f]; }); }); }
+      if (mg.exists()) {
+        const d = mg.data();
+        ['head', 'asst'].forEach(k => {
+          const x = d[k] || {};
+          ['name', 'desig', 'text', 'photo'].forEach(f => { if (x[f]) messages[k][f] = x[f]; });
+        });
+      }
     } catch (e) { console.warn('বাণী লোড হয়নি', e); }
     renderPublic();
     if (!msgDirty()) renderMsgAdmin();
-  } catch (e) { fail(e, 'নোটিশ লোড করা যায়নি।'); }
+  } catch (e) {
+    console.error('loadPublic error:', e);
+    renderPublic();
+    fail(e, 'নোটিশ লোড করা যায়নি।');
+  }
 }
-
 /* ---------- আবেদন জমা ---------- */
 window.submitForm = async e => {
   e.preventDefault();
@@ -1586,7 +1604,9 @@ window.fitNotice = () => {
 };
 window.addEventListener('resize', () => window.fitNotice());
 window.printNotice = () => printHtml(noticeHtml());
-window.renderNotice(); renderMsgAdmin();
+window.renderMsgAdmin = renderMsgAdmin;
+window.renderNotice();
+if ($('msg-admin')) renderMsgAdmin();
 
 window.exportCsv = () => {
   if (!applicants.length) return toast('কোনো ডাটা নেই!', false);
