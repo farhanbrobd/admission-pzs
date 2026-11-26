@@ -1524,7 +1524,8 @@ function noticeHtml() {
   const rows = CLASSES.map(c => { const [a, b] = split(examConfigs[c.label]); return `<tr><td><b>${c.label}</b></td><td>${esc(a)}</td><td>${esc(b || bdy(dates.examDate))}</td><td>${esc(examLine(c.label))}</td></tr>`; }).join('');
   const a2 = new Date(dates.admitStart.getTime() + 864e5);
   const admitTxt = `${bdf(dates.admitStart, { day: 'numeric' })} ও ${bdf(a2, { day: 'numeric' })} ${bdf(dates.admitStart, { month: 'long', year: 'numeric' })}`;
-  const sec = committeeList.find(c => /সদস্য সচিব/.test(c.designation || '')) || { name: messages.head.name, designation: messages.head.desig };
+  const secM = committeeList.find(c => /সদস্য[\s-]?সচিব/.test((c.role || '') + ' ' + (c.designation || '')));
+  const sec = secM ? { name: secM.name, designation: formatCmDesignation(secM) } : { name: messages.head.name, designation: messages.head.desig };
   const qr = qrSvg(base);
   const nCm = committeeList.length, dense = nCm > 8 ? ' dense' : '', cmCols = nCm > 12 ? 5 : 4;
   const logo = siteLogo ? `<img class="lg" src="${siteLogo}" alt="">` : '<div class="lg"></div>';
@@ -1558,7 +1559,7 @@ function noticeHtml() {
     <li>একজন শিক্ষার্থীর জন্য একটিই আবেদন করুন। ভুল তথ্যে আবেদন বাতিল হতে পারে।</li>
     <li>নির্ধারিত সময়ের পর আবেদন ও ফি গ্রহণ করা হবে না।</li>
     <li>পরীক্ষার দিন প্রবেশপত্রের প্রিন্ট কপি সঙ্গে আনতে হবে।</li></ul></div></div>
-  ${committeeList.length ? `<h3>ভর্তি কমিটি</h3><div class="cmg" style="grid-template-columns:repeat(${cmCols},1fr)">${committeeList.map(c => `<div><b>${esc(c.name)}</b>${esc(c.designation)}</div>`).join('')}</div>` : ''}
+  ${committeeList.length ? `<h3>ভর্তি কমিটি</h3><div class="cmg" style="grid-template-columns:repeat(${cmCols},1fr)">${committeeList.map(c => `<div><b>${esc(c.name)}</b>${esc(formatCmDesignation(c))}</div>`).join('')}</div>` : ''}
   </div>
   <div class="ftr"><div><b>ঠিকানা:</b> হাটকালুপাড়া মহাসড়ক, পানিপুর<br><b>ওয়েবসাইট:</b> ${esc(shown)}</div>
     <div class="sgn">${siteSig ? `<img src="${siteSig}" alt="">` : '<div style="height:11mm"></div>'}<b>${esc(sec.name)}</b>${esc(sec.designation)}${/ভর্তি কমিটি/.test(sec.designation) ? '' : ', ভর্তি কমিটি'}<br>পানিপুর জেলা স্কুল</div></div>
@@ -1585,212 +1586,81 @@ window.renderNotice(); renderMsgAdmin();
 window.exportCsv = () => {
   if (!applicants.length) return toast('কোনো ডাটা নেই!', false);
   const q = v => '"' + String(v ?? '').replace(/"/g, '""') + '"';
-  const head = ['রোল','নাম','শ্রেণি','বিভাগ','জন্ম নিবন্ধন','জন্ম তারিখ','লিঙ্গ','পিতার নাম','পিতার এনআইডি','মোবাইল','মাতার নাম','ঠিকানা','কোটা','পেমেন্ট','মাধ্যম','TrxID','মাতার এনআইডি','মাতার পেশা','অভিভাবকের নাম','সম্পর্ক','অভিভাবকের এনআইডি','অভিভাবকের পেশা','সহশিক্ষা কার্যক্রম','Student Name (English)','Father Name (English)','Mother Name (English)','Guardian Name (English)'];
-  const rows = applicants.map(a => [a.roll,a.name,a.targetClass,a.group,a.birthRegNo,a.dob,a.gender,a.fatherName,a.fatherNid,a.fatherPhone,a.motherName,a.presentAddress,a.quota,a.paymentStatus,a.gateway,a.trxId,a.motherNid,a.motherOccupation,a.guardianName,a.guardianRelation,a.guardianNid,a.guardianOccupation,a.coCurricular,a.nameEn,a.fatherNameEn,a.motherNameEn,a.guardianNameEn].map(q).join(','));
+  const head = ['রোল','নাম','শ্রেণি','বিভাগ','জন্ম নিবন্ধন','জন্ম তারিখ','লিঙ্গ','পিতার নাম','পিতার এনআইডি','মোবাইল','মাতার নাম','ঠিকানা','কোটা','পেমেন্ট','মাধ্যম','TrxID','মাতার এনআইডি','মাতার পেশা','অভিভাবকের নাম','সম্পর্ক','অভিভাবকের এনআইডি','অভিভাবকের পেশা','সহশিক্ষা কার্যক্রম','Student Name (English)','Father Name (English)','Mother Name (English)','Guardian Name (English)','মুক্তিযোদ্ধা MIS','মুক্তিযোদ্ধা প্রমাণক'];
+  const rows = applicants.map(a => [a.roll,a.name,a.targetClass,a.group,a.birthRegNo,a.dob,a.gender,a.fatherName,a.fatherNid,a.fatherPhone,a.motherName,a.presentAddress,a.quota,a.paymentStatus,a.gateway,a.trxId,a.motherNid,a.motherOccupation,a.guardianName,a.guardianRelation,a.guardianNid,a.guardianOccupation,a.coCurricular,a.nameEn,a.fatherNameEn,a.motherNameEn,a.guardianNameEn,a.ffMisNo,a.ffProofText].map(q).join(','));
   const blob = new Blob(['\uFEFF' + head.map(q).join(',') + '\n' + rows.join('\n')], { type: 'text/csv;charset=utf-8;' });
   const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'Admission_Applicants.csv';
   document.body.appendChild(a); a.click(); a.remove();
-window.printRequisition = () => {
+};
+
+const filteredApplicants = () => {
   const q = en($('f-q').value.trim().toLowerCase()), c = $('f-cls').value, g = $('f-grp').value, s = $('f-st').value;
-  const list = applicants.filter(a => (c === 'All' || a.targetClass === c) && (g === 'All' || (a.targetClass === '৯ম' && a.group === g)) && (s === 'All' || a.paymentStatus === s)
-    && (!q || [a.name, a.roll, a.fatherPhone].some(v => String(v).toLowerCase().includes(q))));
+  return { c, list: applicants.filter(a => (c === 'All' || a.targetClass === c) && (g === 'All' || (a.targetClass === '৯ম' && a.group === g)) && (s === 'All' || a.paymentStatus === s)
+    && (!q || [a.name, a.roll, a.fatherPhone, a.quota, a.ffMisNo].some(v => String(v || '').toLowerCase().includes(q)))) };
+};
+const reportHead = (title, c, label, n) => `<div style="text-align:center;margin-bottom:4mm">
+  <div style="font-size:11pt;font-weight:700">গণপ্রজাতন্ত্রী বাংলাদেশ সরকার</div>
+  <div style="font-size:15pt;font-weight:800;color:#064e3b">পানিপুর জেলা স্কুল, পানিপুর</div>
+  <div style="font-size:11.5pt;font-weight:700;margin-top:1mm;text-decoration:underline">${title}</div>
+  <div style="font-size:9.5pt;color:#374151;margin-top:1mm">শিক্ষাবর্ষ: ২০২৭ | শ্রেণি: <b>${c === 'All' ? 'সকল শ্রেণি' : esc(c) + ' শ্রেণি'}</b> | ${label}: <b>${toBn(n)}</b> জন</div></div>`;
+const quotaCell = a => {
+  const ff = String(a.quota || '').includes('মুক্তিযোদ্ধা কোটা');
+  return `<b>${esc(a.quota || 'সাধারণ')}</b>`
+    + (ff && a.ffMisNo && a.ffMisNo !== 'N/A' ? `<div><small>MIS: <b>${esc(a.ffMisNo)}</b></small></div>` : '')
+    + (ff && a.ffProofText && a.ffProofText !== 'N/A' ? `<div style="margin-top:2px"><small>প্রমাণক: ${esc(a.ffProofText)}</small></div>` : '');
+};
+const signRow = (l, r) => `<div style="display:flex;justify-content:space-between;margin-top:14mm;font-size:9.5pt">
+  <div style="border-top:1px solid #111;padding-top:1mm;width:58mm;text-align:center">${l}</div>
+  <div style="border-top:1px solid #111;padding-top:1mm;width:58mm;text-align:center">${r}</div></div>`;
+
+window.printRequisition = () => {
+  const { c, list } = filteredApplicants();
   const minRows = Math.max(list.length, 15);
   let rowsHtml = '';
   for (let i = 0; i < minRows; i++) {
-    const a = list[i];
-    const bnSl = toBn(i + 1);
-    if (a) {
-      const fullName = `${esc(a.name)}<br><small style="color:#374151">${a.nameEn && a.nameEn !== 'N/A' ? esc(a.nameEn) : ''}</small>`;
-      const parents = `পিতা: ${esc(a.fatherName)}<br>মাতা: ${esc(a.motherName)}`;
-      const dobReg = `${esc(a.dob)}<br><small>${esc(a.birthRegNo)}</small>`;
-      const clsInfo = `${esc(a.targetClass)}${a.group && a.group !== 'N/A' ? ' (' + esc(a.group) + ')' : ''}`;
-      const misLine = a.ffMisNo && a.ffMisNo !== 'N/A' ? `<div><small>MIS: <b>${esc(a.ffMisNo)}</b></small></div>` : '';
-      const quotaInfo = String(a.quota || '').includes('মুক্তিযোদ্ধা কোটা')
-        ? `<b>${esc(a.quota)}</b>${misLine}${a.ffProofText && a.ffProofText !== 'N/A' ? `<br><small>${esc(a.ffProofText)}</small>` : ''}`
-        : esc(a.quota || 'সাধারণ');
-      rowsHtml += `<tr>
-        <td style="text-align:center">${bnSl}</td>
-        <td style="text-align:center"><b>${esc(a.roll)}</b></td>
-        <td>${fullName}</td>
-        <td>${parents}</td>
-        <td>${dobReg}</td>
-        <td style="text-align:center">${clsInfo}</td>
-        <td>${quotaInfo}</td>
-        <td>${esc(a.fatherPhone)}</td>
-      </tr>`;
-    } else {
-      rowsHtml += `<tr style="height:9mm"><td style="text-align:center">${bnSl}</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>`;
-    }
+    const a = list[i], sl = toBn(i + 1);
+    if (!a) { rowsHtml += `<tr style="height:9mm"><td style="text-align:center">${sl}</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>`; continue; }
+    rowsHtml += `<tr>
+      <td style="text-align:center">${sl}</td>
+      <td style="text-align:center"><b>${esc(a.roll)}</b></td>
+      <td>${esc(a.name)}<br><small style="color:#374151">${a.nameEn && a.nameEn !== 'N/A' ? esc(a.nameEn) : ''}</small></td>
+      <td>পিতা: ${esc(a.fatherName)}<br>মাতা: ${esc(a.motherName)}</td>
+      <td>${esc(a.dob)}<br><small>${esc(a.birthRegNo)}</small></td>
+      <td style="text-align:center">${esc(a.targetClass)}${a.group && a.group !== 'N/A' ? ' (' + esc(a.group) + ')' : ''}</td>
+      <td>${quotaCell(a)}</td>
+      <td>${esc(a.fatherPhone)}</td></tr>`;
   }
-  const clsTitle = c === 'All' ? 'সকল শ্রেণি' : c + ' শ্রেণি';
-  const html = `<div class="pg" style="font-family:'Hind Siliguri',sans-serif">
-    <div style="text-align:center;margin-bottom:4mm">
-      <div style="font-size:11pt;font-weight:700">গণপ্রজাতন্ত্রী বাংলাদেশ সরকার</div>
-      <div style="font-size:15pt;font-weight:800;color:#064e3b">পানিপুর জেলা স্কুল, পানিপুর</div>
-      <div style="font-size:11.5pt;font-weight:700;margin-top:1mm;text-decoration:underline">শিক্ষার্থীর তথ্য রিকুইজিশন ছক (কার্যবিবরণী সংযুক্তি-০১ অনুযায়ী)</div>
-      <div style="font-size:9.5pt;color:#374151;margin-top:1mm">শিক্ষাবর্ষ: ২০২৭ | শ্রেণি: <b>${esc(clsTitle)}</b> | মোট তালিকাভুক্ত: <b>${toBn(list.length)}</b> জন</div>
-    </div>
-    <table class="pt" style="font-size:9pt;width:100%">
-      <thead>
-        <tr style="background:#064e3b;color:#fff">
-          <th style="width:5%;text-align:center">ক্রম</th>
-          <th style="width:10%;text-align:center">আবেদন আইডি / রোল</th>
-          <th style="width:17%">শিক্ষার্থীর পূর্ণ নাম<br>(বাংলা ও ইংরেজিতে)</th>
-          <th style="width:18%">পিতা ও মাতার নাম</th>
-          <th style="width:14%">জন্ম তারিখ ও অনলাইন<br>জন্ম নিবন্ধন নং</th>
-          <th style="width:9%;text-align:center">ভর্তিচ্ছু শ্রেণি ও বিভাগ</th>
-          <th style="width:16%">প্রযোজ্য কোটা ও প্রমাণক</th>
-          <th style="width:11%">মোবাইল নম্বর ও মন্তব্য</th>
-        </tr>
-      </thead>
-      <tbody>${rowsHtml}</tbody>
-    </table>
-    <div style="display:flex;justify-content:space-between;margin-top:14mm;font-size:9.5pt">
-      <div style="border-top:1px solid #111;padding-top:1mm;width:58mm;text-align:center">তথ্য প্রস্তুতকারীর স্বাক্ষর ও সিল</div>
-      <div style="border-top:1px solid #111;padding-top:1mm;width:58mm;text-align:center">প্রতিষ্ঠান প্রধানের স্বাক্ষর ও সিল</div>
-    </div>
-  </div>`;
-  printHtml(html);
+  printHtml(`<div class="pg">${reportHead('শিক্ষার্থীর তথ্য রিকুইজিশন ছক (কার্যবিবরণী সংযুক্তি-০১ অনুযায়ী)', c, 'মোট তালিকাভুক্ত', list.length)}
+    <table class="pt" style="font-size:9pt;width:100%"><thead><tr style="background:#064e3b;color:#fff">
+      <th style="width:5%;text-align:center">ক্রম</th><th style="width:10%;text-align:center">আবেদন আইডি / রোল</th>
+      <th style="width:17%">শিক্ষার্থীর পূর্ণ নাম<br>(বাংলা ও ইংরেজিতে)</th><th style="width:18%">পিতা ও মাতার নাম</th>
+      <th style="width:14%">জন্ম তারিখ ও অনলাইন<br>জন্ম নিবন্ধন নং</th><th style="width:9%;text-align:center">ভর্তিচ্ছু শ্রেণি ও বিভাগ</th>
+      <th style="width:16%">প্রযোজ্য কোটা ও প্রমাণক</th><th style="width:11%">মোবাইল নম্বর ও মন্তব্য</th></tr></thead>
+    <tbody>${rowsHtml}</tbody></table>
+    ${signRow('তথ্য প্রস্তুতকারীর স্বাক্ষর ও সিল', 'প্রতিষ্ঠান প্রধানের স্বাক্ষর ও সিল')}</div>`);
 };
 
 window.printQuotaList = () => {
-  const q = en($('f-q').value.trim().toLowerCase()), c = $('f-cls').value, g = $('f-grp').value, s = $('f-st').value;
-  const quotaApplicants = applicants.filter(a => {
-    const hasQuota = a.quota && String(a.quota).trim() !== '' && String(a.quota).trim() !== 'সাধারণ' && String(a.quota).trim() !== 'N/A';
-    if (!hasQuota) return false;
-    return (c === 'All' || a.targetClass === c)
-      && (g === 'All' || (a.targetClass === '৯ম' && a.group === g))
-      && (s === 'All' || a.paymentStatus === s)
-      && (!q || [a.name, a.roll, a.fatherPhone, a.quota, a.ffMisNo].some(v => String(v || '').toLowerCase().includes(q)));
-  });
-  if (!quotaApplicants.length) return toast('নির্বাচিত ফিল্টারে কোনো কোটা আবেদনকারী পাওয়া যায়নি!', false);
-  const rowsHtml = quotaApplicants.map((a, idx) => {
-    const clsInfo = `${esc(a.targetClass)}${a.group && a.group !== 'N/A' ? ' (' + esc(a.group) + ')' : ''}`;
-    const hasFF = String(a.quota || '').includes('মুক্তিযোদ্ধা কোটা');
-    const misTxt = (hasFF && a.ffMisNo && a.ffMisNo !== 'N/A') ? `<div><small>MIS: <b>${esc(a.ffMisNo)}</b></small></div>` : '';
-    const proofTxt = (hasFF && a.ffProofText && a.ffProofText !== 'N/A') ? `<div style="margin-top:2px"><small>প্রমাণক: ${esc(a.ffProofText)}</small></div>` : '';
-    const stInfo = (ST[a.paymentStatus] || ST.Pending)[0];
-    return `<tr>
-      <td style="text-align:center">${toBn(idx + 1)}</td>
-      <td style="text-align:center"><b>${esc(a.roll)}</b></td>
-      <td><b>${esc(a.name)}</b>${a.nameEn && a.nameEn !== 'N/A' ? `<br><small>${esc(a.nameEn)}</small>` : ''}</td>
-      <td style="text-align:center">${clsInfo}</td>
-      <td><b>${esc(a.quota)}</b>${misTxt}${proofTxt}</td>
-      <td>জন্ম নিবন্ধন: ${esc(a.birthRegNo || '—')}<br>পিতা: ${esc(a.fatherName || '—')}<br>মোবাইল: <b>${esc(a.fatherPhone || '—')}</b></td>
-      <td style="text-align:center">${esc(stInfo)}</td>
-      <td style="height:14mm"></td>
-    </tr>`;
-  }).join('');
-  const clsTitle = c === 'All' ? 'সকল শ্রেণি' : c + ' শ্রেণি';
-  const html = `<div class="pg" style="font-family:'Hind Siliguri',sans-serif">
-    <div style="text-align:center;margin-bottom:4mm">
-      <div style="font-size:11pt;font-weight:700">গণপ্রজাতন্ত্রী বাংলাদেশ সরকার</div>
-      <div style="font-size:15pt;font-weight:800;color:#064e3b">পানিপুর জেলা স্কুল, পানিপুর</div>
-      <div style="font-size:11.5pt;font-weight:700;margin-top:1mm;text-decoration:underline">কোটা যাচাই-বাছাই উপকমিটির জন্য কোটা আবেদনকারীর বিস্তারিত তালিকা</div>
-      <div style="font-size:9.5pt;color:#374151;margin-top:1mm">শিক্ষাবর্ষ: ২০২৭ | শ্রেণি: <b>${esc(clsTitle)}</b> | মোট কোটা আবেদনকারী: <b>${toBn(quotaApplicants.length)}</b> জন</div>
-    </div>
-    <table class="pt" style="font-size:8.8pt;width:100%">
-      <thead>
-        <tr style="background:#064e3b;color:#fff">
-          <th style="width:5%;text-align:center">ক্রম</th>
-          <th style="width:9%;text-align:center">রোল</th>
-          <th style="width:16%">শিক্ষার্থীর নাম<br>(বাংলা ও ইংরেজি)</th>
-          <th style="width:9%;text-align:center">শ্রেণি/বিভাগ</th>
-          <th style="width:23%">প্রযোজ্য কোটা, MIS ও প্রমাণক</th>
-          <th style="width:19%">জন্ম নিবন্ধন, পিতা ও মোবাইল</th>
-          <th style="width:8%;text-align:center">ফি অবস্থা</th>
-          <th style="width:14%;text-align:center">যাচাই মন্তব্য ও স্বাক্ষর</th>
-        </tr>
-      </thead>
-      <tbody>${rowsHtml}</tbody>
-    </table>
-    <div style="display:flex;justify-content:space-between;margin-top:14mm;font-size:9.5pt">
-      <div style="border-top:1px solid #111;padding-top:1mm;width:58mm;text-align:center">সদস্য-সচিব, কোটা যাচাই-বাছাই উপকমিটি</div>
-      <div style="border-top:1px solid #111;padding-top:1mm;width:58mm;text-align:center">আহ্বায়ক, কোটা যাচাই-বাছাই উপকমিটি</div>
-    </div>
-  </div>`;
-  printHtml(html);
-};
-
-  if (!quotaApplicants.length) return toast('নির্বাচিত ফিল্টারে কোনো কোটা আবেদনকারী পাওয়া যায়নি!', false);
-
-  const rowsHtml = quotaApplicants.map((a, idx) => {
-    const clsInfo = `${esc(a.targetClass)}${a.group && a.group !== 'N/A' ? ' (' + esc(a.group) + ')' : ''}`;
-    const hasFF = String(a.quota || '').includes('মুক্তিযোদ্ধা কোটা');
-    const misTxt = (hasFF && a.ffMisNo && a.ffMisNo !== 'N/A') ? `<div><small>MIS: <b>${esc(a.ffMisNo)}</b></small></div>` : '';
-    const proofTxt = (hasFF && a.ffProofText && a.ffProofText !== 'N/A') ? `<div style="margin-top:2px"><small>প্রমাণক: ${esc(a.ffProofText)}</small></div>` : '';
-    const stInfo = (ST[a.paymentStatus] || ST.Pending)[0];
-    return `<tr>
-      <td style="text-align:center">${toBn(idx + 1)}</td>
-      <td style="text-align:center"><b>${esc(a.roll)}</b></td>
-      <td><b>${esc(a.name)}</b>${a.nameEn && a.nameEn !== 'N/A' ? `<br><small>${esc(a.nameEn)}</small>` : ''}</td>
-      <td style="text-align:center">${clsInfo}</td>
-      <td><b>${esc(a.quota)}</b>${misTxt}${proofTxt}</td>
-      <td>জন্ম নিবন্ধন: ${esc(a.birthRegNo || '—')}<br>পিতা: ${esc(a.fatherName || '—')}<br>মোবাইল: <b>${esc(a.fatherPhone || '—')}</b></td>
-      <td style="text-align:center">${esc(stInfo)}</td>
-      <td style="height:14mm"></td>
-    </tr>`;
-  }).join('');
-
-  const clsTitle = c === 'All' ? 'সকল শ্রেণি' : c + ' শ্রেণি';
-  const html = `<div class="pg" style="font-family:'Hind Siliguri',sans-serif">
-    <div style="text-align:center;margin-bottom:4mm">
-      <div style="font-size:11pt;font-weight:700">গণপ্রজাতন্ত্রী বাংলাদেশ সরকার</div>
-      <div style="font-size:15pt;font-weight:800;color:#064e3b">পানিপুর জেলা স্কুল, পানিপুর</div>
-      <div style="font-size:11.5pt;font-weight:700;margin-top:1mm;text-decoration:underline">কোটা যাচাই-বাছাই উপকমিটির জন্য কোটা আবেদনকারীর বিস্তারিত তালিকা</div>
-      <div style="font-size:9.5pt;color:#374151;margin-top:1mm">শিক্ষাবর্ষ: ২০২৭ | শ্রেণি: <b>${esc(clsTitle)}</b> | মোট কোটা আবেদনকারী: <b>${toBn(quotaApplicants.length)}</b> জন</div>
-    </div>
-    <table class="pt" style="font-size:8.8pt;width:100%">
-      <thead>
-        <tr style="background:#064e3b;color:#fff">
-          <th style="width:5%;text-align:center">ক্রম</th>
-          <th style="width:9%;text-align:center">রোল</th>
-          <th style="width:16%">শিক্ষার্থীর নাম<br>(বাংলা ও ইংরেজি)</th>
-          <th style="width:9%;text-align:center">শ্রেণি/বিভাগ</th>
-          <th style="width:23%">প্রযোজ্য কোটা, MIS ও প্রমাণক</th>
-          <th style="width:19%">জন্ম নিবন্ধন, পিতা ও মোবাইল</th>
-          <th style="width:8%;text-align:center">ফি অবস্থা</th>
-          <th style="width:14%;text-align:center">যাচাই মন্তব্য ও স্বাক্ষর</th>
-        </tr>
-      </thead>
-      <tbody>${rowsHtml}</tbody>
-    </table>
-    <div style="display:flex;justify-content:space-between;margin-top:14mm;font-size:9.5pt">
-      <div style="border-top:1px solid #111;padding-top:1mm;width:58mm;text-align:center">সদস্য-সচিব, কোটা যাচাই-বাছাই উপকমিটি</div>
-      <div style="border-top:1px solid #111;padding-top:1mm;width:58mm;text-align:center">আহ্বায়ক, কোটা যাচাই-বাছাই উপকমিটি</div>
-    </div>
-  </div>`;
-  printHtml(html);
-};
-  const clsTitle = c === 'All' ? 'সকল শ্রেণি' : c + ' শ্রেণি';
-  const html = `<div class="pg" style="font-family:'Hind Siliguri',sans-serif">
-    <div style="text-align:center;margin-bottom:4mm">
-      <div style="font-size:11pt;font-weight:700">গণপ্রজাতন্ত্রী বাংলাদেশ সরকার</div>
-      <div style="font-size:15pt;font-weight:800;color:#064e3b">পানিপুর জেলা স্কুল, পানিপুর</div>
-      <div style="font-size:11.5pt;font-weight:700;margin-top:1mm;text-decoration:underline">শিক্ষার্থীর তথ্য রিকুইজিশন ছক (কার্যবিবরণী সংযুক্তি-০১ অনুযায়ী)</div>
-      <div style="font-size:9.5pt;color:#374151;margin-top:1mm">শিক্ষাবর্ষ: ২০২৭ | শ্রেণি: <b>${esc(clsTitle)}</b> | মোট তালিকাভুক্ত: <b>${toBn(list.length)}</b> জন</div>
-    </div>
-    <table class="pt" style="font-size:9pt;width:100%">
-      <thead>
-        <tr style="background:#064e3b;color:#fff">
-          <th style="width:5%;text-align:center">ক্রম</th>
-          <th style="width:10%;text-align:center">আবেদন আইডি / রোল</th>
-          <th style="width:17%">শিক্ষার্থীর পূর্ণ নাম<br>(বাংলা ও ইংরেজিতে)</th>
-          <th style="width:18%">পিতা ও মাতার নাম</th>
-          <th style="width:14%">জন্ম তারিখ ও অনলাইন<br>জন্ম নিবন্ধন নং</th>
-          <th style="width:9%;text-align:center">ভর্তিচ্ছু শ্রেণি ও বিভাগ</th>
-          <th style="width:16%">প্রযোজ্য কোটা ও প্রমাণক</th>
-          <th style="width:11%">মোবাইল নম্বর ও মন্তব্য</th>
-        </tr>
-      </thead>
-      <tbody>${rowsHtml}</tbody>
-    </table>
-    <div style="display:flex;justify-content:space-between;margin-top:14mm;font-size:9.5pt">
-      <div style="border-top:1px solid #111;padding-top:1mm;width:58mm;text-align:center">তথ্য প্রস্তুতকারীর স্বাক্ষর ও সিল</div>
-      <div style="border-top:1px solid #111;padding-top:1mm;width:58mm;text-align:center">প্রতিষ্ঠান প্রধানের স্বাক্ষর ও সিল</div>
-    </div>
-  </div>`;
-  printHtml(html);
+  const { c, list: all } = filteredApplicants();
+  const list = all.filter(a => { const t = String(a.quota || '').trim(); return t && t !== 'সাধারণ' && t !== 'N/A'; });
+  if (!list.length) return toast('নির্বাচিত ফিল্টারে কোনো কোটা আবেদনকারী পাওয়া যায়নি!', false);
+  const rowsHtml = list.map((a, i) => `<tr>
+    <td style="text-align:center">${toBn(i + 1)}</td>
+    <td style="text-align:center"><b>${esc(a.roll)}</b></td>
+    <td><b>${esc(a.name)}</b>${a.nameEn && a.nameEn !== 'N/A' ? `<br><small>${esc(a.nameEn)}</small>` : ''}</td>
+    <td style="text-align:center">${esc(a.targetClass)}${a.group && a.group !== 'N/A' ? ' (' + esc(a.group) + ')' : ''}</td>
+    <td>${quotaCell(a)}</td>
+    <td>জন্ম নিবন্ধন: ${esc(a.birthRegNo || '—')}<br>পিতা: ${esc(a.fatherName || '—')}<br>মোবাইল: <b>${esc(a.fatherPhone || '—')}</b></td>
+    <td style="text-align:center">${esc((ST[a.paymentStatus] || ST.Pending)[0])}</td>
+    <td style="height:14mm"></td></tr>`).join('');
+  printHtml(`<div class="pg">${reportHead('কোটা যাচাই-বাছাই উপকমিটির জন্য কোটা আবেদনকারীর বিস্তারিত তালিকা', c, 'মোট কোটা আবেদনকারী', list.length)}
+    <table class="pt" style="font-size:8.8pt;width:100%"><thead><tr style="background:#064e3b;color:#fff">
+      <th style="width:5%;text-align:center">ক্রম</th><th style="width:9%;text-align:center">রোল</th>
+      <th style="width:16%">শিক্ষার্থীর নাম<br>(বাংলা ও ইংরেজি)</th><th style="width:9%;text-align:center">শ্রেণি/বিভাগ</th>
+      <th style="width:23%">প্রযোজ্য কোটা, MIS ও প্রমাণক</th><th style="width:19%">জন্ম নিবন্ধন, পিতা ও মোবাইল</th>
+      <th style="width:8%;text-align:center">ফি অবস্থা</th><th style="width:14%;text-align:center">যাচাই মন্তব্য ও স্বাক্ষর</th></tr></thead>
+    <tbody>${rowsHtml}</tbody></table>
+    ${signRow('সদস্য-সচিব, কোটা যাচাই-বাছাই উপকমিটি', 'আহ্বায়ক, কোটা যাচাই-বাছাই উপকমিটি')}</div>`);
 };
 
 
@@ -2007,15 +1877,7 @@ window.printMyForm = () => {
 try { if (localStorage.getItem('pp_form')) $('my-form-btn').classList.remove('hidden'); } catch (e) {}
 
 /* ---------- এডমিন: আবেদন সম্পাদনা ---------- */
-function editField([id, label, type, extra], val) {
-  if (type === 'file') return '';
-  const req = label.includes('*') ? 'required' : '', v = (val === 'N/A' || val == null) ? '' : val;
-  let c;
-  if (type === 'select') c = `<select id="e-${id}" ${req} class="in">${extra.map(o => `<option value="${esc(o)}" ${o === val ? 'selected' : ''}>${o || 'নির্বাচন করুন'}</option>`).join('')}</select>`;
-  else if (type === 'textarea') c = `<textarea id="e-${id}" ${req} rows="2" class="in">${esc(v)}</textarea>`;
-  else c = `<input id="e-${id}" type="${type}" ${req} ${extra || ''} value="${esc(v)}" class="in">`;
-  return `<div><label class="lb">${label}</label>${c}</div>`;
-}
+
 window.editStudent = id => {
   const s = byId(id); if (!s) return;
   const sections = Object.entries(FIELDS).map(([k, [ti]]) => `<p class="font-bold text-emerald-900 mt-4 mb-2 border-b">${ti}</p>${sectionBody(k, 'e-', s)}`).join('');
