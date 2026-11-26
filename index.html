@@ -914,7 +914,12 @@ function toast(msg, ok = true) {
 }
 function showModal(html, actions = true) { $('modal-body').innerHTML = html; $('modal-actions').classList.toggle('hidden', !actions); $('modal').classList.remove('hidden'); }
 function closeModal() { $('modal').classList.add('hidden'); }
-
+function formatCmDesignation(c) {
+  const role = (c?.role || '').trim();
+  const extra = (c?.designation || '').trim();
+  if (role && extra) return `${role}, ${extra}`;
+  return role || extra || 'সদস্য';
+}
 function renderPublic() {
   renderTimeline(); applyGate();
   $('cfg-view').innerHTML = CLASSES.map(c => `<div class="card top text-center">
